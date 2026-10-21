@@ -2,7 +2,7 @@
    Converte as linhas das tabelas PBI e PBI_9 no mesmo formato dos CSV de dados/ e entrega ao painel. */
 (function () {
   const CFG = window.ASBUILT_CONFIG || {};
-  if (!CFG.clientId) return;
+  const configurado = !!(CFG.clientId && window.msal);
   const GRAPH = 'https://graph.microsoft.com/v1.0';
   let app, account, busy = false;
 
@@ -20,13 +20,20 @@
     btn = document.createElement('button'); btn.type = 'button';
     msg = document.createElement('span');
     box.append(btn, msg); host.append(box);
-    btn.addEventListener('click', () => (account ? atualizar(true) : entrar()));
+    btn.addEventListener('click', () => (!configurado ? avisoConfig(true) : account ? atualizar(true) : entrar()));
   }
   const status = (b, m) => { ui(); if (!box) return; btn.textContent = b; msg.innerHTML = m; };
 
+  function avisoConfig(clicou) {
+    status('Conectar ao SharePoint', clicou
+      ? 'Falta configurar o acesso: preencha <b>clientId</b> e <b>tenantId</b> em config.js com os códigos do aplicativo registrado pela TI (veja PEDIDO_TI.md).'
+      : 'Mostrando a <b>cópia salva</b>. A leitura direta do SharePoint ainda não foi configurada.');
+  }
   // ---------- autenticação ----------
   async function iniciar() {
     ui();
+    if (!configurado) { avisoConfig(false); return; }
+    try {
     app = new msal.PublicClientApplication({
       auth: { clientId: CFG.clientId, authority: 'https://login.microsoftonline.com/' + (CFG.tenantId || 'organizations'), redirectUri: location.origin + location.pathname },
       cache: { cacheLocation: 'localStorage' }
@@ -36,6 +43,7 @@
     account = (r && r.account) || app.getAllAccounts()[0] || null;
     if (account) atualizar(false);
     else status('Entrar com Microsoft', 'Mostrando a <b>última cópia salva</b>. Entre para ler a planilha do SharePoint.');
+    } catch (e) { status('Entrar com Microsoft', 'Erro ao iniciar o login Microsoft: ' + (e.errorMessage || e.message || e)); }
   }
   async function entrar() {
     try { const r = await app.loginPopup({ scopes: CFG.escopos }); account = r.account; atualizar(true); }
