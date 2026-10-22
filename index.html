@@ -83,6 +83,14 @@ body{background:#eef2f8}
 .ab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:18px}
 .ab-card{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:14px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
 .ab-card.wide{grid-column:1/-1}
+.ab-row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.ab-row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start}
+.ab-row3 #card-oemp .ab-table td,.ab-row3 #card-oemp .ab-th{padding-inline:6px}
+.ab-row3 #card-oemp .ab-table{font-size:12px}
+.ab-row3 #card-oemp .ab-scroll{max-height:22rem}
+.ab-vscroll{max-height:540px;overflow-y:auto;overflow-x:hidden;padding-right:4px}
+@media (max-width:1100px){.ab-row2{grid-template-columns:minmax(0,1fr)}.ab-row3{grid-template-columns:repeat(2,minmax(0,1fr))}.ab-row3 #card-oemp{grid-column:1/-1}}
+@media (max-width:700px){.ab-row3{grid-template-columns:minmax(0,1fr)}}
 .ab-card.alert{border-top-color:var(--bad)}
 .ab-card.accent{border-top-color:var(--orange)}
 .ab-card h3{margin:0;font-size:16.5px;font-weight:700;color:var(--ink)}
@@ -366,13 +374,20 @@ body{background:#eef2f8}
       <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Não emitidos</span><span class="v" id="ko-ne">—</span><span class="n" id="ko-ne-p">—</span></div>
       <div class="ab-kpi" style="--kc:var(--navy)"><span class="k">Planejado até o mês</span><span class="v" id="ko-plan">—</span><span class="n" id="ko-plan-n">—</span></div>
     </div>
-    <div class="ab-grid">
-      <div class="ab-card wide" id="card-ocurva">
+    <div class="ab-row2">
+      <div class="ab-card" id="card-ocurva">
         <h3>Curva S dos obrigatórios</h3>
-        <p class="ab-note">Tendência usa a data prevista para docs previstos de ago/26 em diante, como no Power BI. Em trâmite acumula pela data prevista.</p>
+        <p class="ab-note">Valores acumulados nos pontos em que a curva muda. Tendência usa a data prevista para docs previstos de ago/26 em diante, como no Power BI. Em trâmite acumula pela data prevista.</p>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
       </div>
+      <div class="ab-card" id="card-oativo">
+        <h3>Status por ativo</h3>
+        <div class="ab-legend" id="l-sdoc4"></div>
+        <div class="ab-vscroll"><div class="ab-chart dash-skeleton" id="c-oativo" data-source="obrigatorios"></div></div>
+      </div>
+    </div>
+    <div class="ab-row3">
       <div class="ab-card" id="card-omes">
         <h3 id="h-omes">No mês</h3>
         <p class="ab-note">Pela data de ação do CDOC.</p>
@@ -383,12 +398,7 @@ body{background:#eef2f8}
         <p class="ab-note" id="n-oader">Meta de 80%.</p>
         <div class="ab-gauges" id="g-oader" data-source="obrigatorios"></div>
       </div>
-      <div class="ab-card wide" id="card-oativo">
-        <h3>Status por ativo</h3>
-        <div class="ab-legend" id="l-sdoc4"></div>
-        <div class="ab-chart dash-skeleton" id="c-oativo" data-source="obrigatorios"></div>
-      </div>
-      <div class="ab-card wide" id="card-oemp">
+      <div class="ab-card" id="card-oemp">
         <h3 id="h-oemp">Planejado x emitido por empresa</h3>
         <div class="ab-scroll" id="t-oemp" data-source="obrigatorios"></div>
       </div>
@@ -633,9 +643,9 @@ body{background:#eef2f8}
     if (x.bandwidth() >= 16) idxs.forEach((m, i) => { if (vals[i]) svg.append('text').attr('class', 'ab-lab').attr('x', x(m) + x.bandwidth() / 2).attr('y', y(vals[i]) - 4).attr('text-anchor', 'middle').text(fmt(vals[i])); });
   }
 
-  function lineChart(box, idxs, series, cutM) {
+  function lineChart(box, idxs, series, cutM, opt = {}) {
     box.classList.remove('dash-skeleton');
-    const W = Math.max(300, box.clientWidth || 800), H = 340;
+    const W = Math.max(300, box.clientWidth || 800), H = opt.h || 340;
     const svg = svgFor(box, W, H);
     const max = d3.max(series, (s) => d3.max(s.values)) || 1;
     const y = d3.scaleLinear([0, max], [H - 26, 14]).nice();
@@ -656,6 +666,40 @@ body{background:#eef2f8}
       const line = d3.line().defined((v) => v != null).x((v, i) => x(idxs[i])).y((v) => y(v));
       svg.append('path').attr('d', line(s.values)).style('fill', 'none').style('stroke', s.color).attr('stroke-width', s.w || 2)
         .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash ? '5 4' : null);
+    }
+    if (opt.labels) {
+      const labs = [];
+      for (const s of series) {
+        let last = -1; s.values.forEach((v, i) => { if (v != null) last = i; });
+        s.values.forEach((v, i) => {
+          if (v == null || !v) return;
+          const prev = i > 0 ? s.values[i - 1] : null;
+          if (v === prev && i !== last) return;
+          if (i === last && v === prev && labs.some((l) => l.s === s && l.v === v)) return;
+          labs.push({ s, v, x: x(idxs[i]), y: y(v) - 7, fim: i === last });
+        });
+      }
+      // posiciona sem sobrepor: últimos pontos primeiro, depois realizado, planejado, tendência e trâmite
+      const ordem = (l) => (l.fim ? 0 : 1) * 10 + series.indexOf(l.s) * (l.s.prio ?? 1);
+      labs.sort((a, b) => ordem(a) - ordem(b));
+      const boxes = [], cw = 5.4, lh = 11, placed = [];
+      const hit = (bx) => boxes.some((o) => bx.x0 < o.x1 && bx.x1 > o.x0 && bx.y0 < o.y1 && bx.y1 > o.y0) || bx.y0 < 2 || bx.y1 > H - 26;
+      for (const l of labs) {
+        const w = fmt(l.v).length * cw + 4, py = y(l.v);
+        for (const dy of [-7, 14, -18, 25]) {
+          const yy = py + dy, x0 = l.x > W - 20 ? l.x - w : l.x - w / 2;
+          const bx = { x0, x1: x0 + w, y0: yy - lh + 2, y1: yy + 2 };
+          if (!hit(bx)) { boxes.push(bx); l.y = yy; placed.push(l); break; }
+        }
+      }
+      labs.length = 0; labs.push(...placed);
+      // marca os pontos (bolinhas) para todos os vértices, mesmo sem rótulo
+      const lg = svg.append('g').style('pointer-events', 'none');
+      for (const l of labs) {
+        lg.append('circle').attr('cx', l.x).attr('cy', y(l.v)).attr('r', 2.6).style('fill', l.s.color).style('stroke', 'var(--paper)').attr('stroke-width', 1);
+        lg.append('text').attr('x', l.x).attr('y', l.y).attr('text-anchor', l.x > W - 20 ? 'end' : 'middle').style('font-size', '9.5px').style('font-weight', '700')
+          .style('fill', l.s.color).style('paint-order', 'stroke').style('stroke', 'var(--paper)').attr('stroke-width', 3).attr('stroke-linejoin', 'round').text(fmt(l.v));
+      }
     }
     const rule = svg.append('line').attr('y1', 10).attr('y2', H - 26).style('stroke', 'var(--ink-soft)').style('opacity', 0);
     const dots = svg.append('g');
@@ -941,7 +985,7 @@ body{background:#eef2f8}
       { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
-    lineChart($('c-ocurva'), idxs, series, ref);
+    lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: 440 });
     setText('h-omes', 'Emissões em ' + mLab(ref));
     monthCards($('t-omes'), F, ref);
     gauge($('g-oader'), [{ v: apr / plan, target: 0.8, label: 'Aprovados ÷ planejado até ' + mLab(ref), color: apr / plan >= 0.8 ? 'var(--good)' : 'var(--bad)', sub: `${fmt(apr)} de ${fmt(plan)}` }]);
