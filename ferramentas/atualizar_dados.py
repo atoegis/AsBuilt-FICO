@@ -45,8 +45,9 @@ def data_de(v):
         return '' if v < 36526 else (EXCEL0 + dt.timedelta(days=round(v))).date().isoformat()
     m = re.search(r'(\d{1,2})/(\d{1,2})/(\d{4})', str(v))
     if m and int(m[3]) >= 2000: return f'{m[3]}-{int(m[2]):02d}-{int(m[1]):02d}'
+    if isinstance(v, (dt.time, dt.timedelta)): return ''
     try: return data_de(float(v))
-    except ValueError: return ''
+    except (TypeError, ValueError): return ''
 
 
 def titulo(s):
@@ -107,14 +108,38 @@ def converter(linhas, eh_bd, ordem, oae_seg):
     return out
 
 
-def ler_tabela(wb, nome):
-    for ws in wb.worksheets:
-        for t in ws.tables.values():
-            if t.name.lower() == nome.lower():
-                linhas = list(ws[t.ref])
-                cols = [str(c.value).strip() if c.value is not None else '' for c in linhas[0]]
-                return [{c: cel.value for c, cel in zip(cols, l)} for l in linhas[1:]], ws.title
-    raise SystemExit(f'Tabela {nome} não encontrada na planilha.')
+def localizar_tabelas(caminho):
+    """Lê do pacote .xlsx onde fica cada tabela (nome -> aba, intervalo), sem abrir a planilha inteira."""
+    import posixpath, zipfile
+    from html import unescape
+    z = zipfile.ZipFile(caminho)
+    rid_alvo = dict(re.findall(r'Id="([^"]+)"[^>]*Target="([^"]+)"', z.read('xl/_rels/workbook.xml.rels').decode()))
+    rid_alvo.update({k: v for v, k in re.findall(r'Target="([^"]+)"[^>]*Id="([^"]+)"', z.read('xl/_rels/workbook.xml.rels').decode())})
+    abas = {}
+    for tag in re.findall(r'<sheet [^>]*/>', z.read('xl/workbook.xml').decode()):
+        nome, rid = re.search(r'name="([^"]+)"', tag)[1], re.search(r'r:id="([^"]+)"', tag)[1]
+        abas[posixpath.normpath(posixpath.join('xl', rid_alvo[rid].lstrip('/').removeprefix('xl/')))] = unescape(nome)
+    tabelas = {}
+    for n in z.namelist():
+        m = re.match(r'xl/worksheets/_rels/(sheet\d+\.xml)\.rels$', n)
+        if not m: continue
+        for alvo in re.findall(r'Target="([^"]+)"', z.read(n).decode()):
+            if 'tables/' not in alvo: continue
+            tx = z.read(posixpath.normpath(posixpath.join('xl/worksheets', alvo))).decode('utf-8', 'ignore')
+            cab = re.search(r'<table [^>]*>', tx)[0]
+            nome, ref = re.search(r'\bname="([^"]+)"', cab)[1], re.search(r'\bref="([^"]+)"', cab)[1]
+            tabelas[nome.lower()] = (abas.get('xl/worksheets/' + m[1]), ref)
+    return tabelas
+
+
+def ler_tabela(wb, tabelas, nome):
+    from openpyxl.utils.cell import range_boundaries
+    if nome.lower() not in tabelas: raise SystemExit(f'Tabela {nome} não encontrada na planilha.')
+    aba, ref = tabelas[nome.lower()]
+    c0, r0, c1, r1 = range_boundaries(ref)
+    it = wb[aba].iter_rows(min_row=r0, max_row=r1, min_col=c0, max_col=c1, values_only=True)
+    cols = [str(c).strip() if c is not None else '' for c in next(it)]
+    return [dict(zip(cols, l)) for l in it], aba
 
 
 def referencia():
@@ -131,15 +156,16 @@ def gravar(nome, linhas):
 
 def main(caminho):
     cfg = {'documentos': 'PBI', 'obrigatorios': 'PBI_9'}
-    wb = openpyxl.load_workbook(caminho, data_only=True, read_only=False)
+    tabelas = localizar_tabelas(caminho)
+    wb = openpyxl.load_workbook(caminho, data_only=True, read_only=True)
     ordem, oae_seg = referencia()
     resumo = {}
     for chave, arq, eh_bd in (('documentos', 'asbuilt_documentos.csv', True), ('obrigatorios', 'asbuilt_obrigatorios.csv', False)):
-        linhas, aba = ler_tabela(wb, cfg[chave])
+        linhas, aba = ler_tabela(wb, tabelas, cfg[chave])
         conv = converter(linhas, eh_bd, ordem, oae_seg)
         gravar(arq, conv)
         resumo[chave] = {'aba': aba, 'linhas': len(conv)}
-    stamp = {'atualizado_em': dt.datetime.now().astimezone().isoformat(timespec='minutes'), 'arquivo': Path(caminho).name, **resumo}
+    stamp = {'atualizado_em': dt.datetime.now().astimezone().isoformat(timespec='minutes'), 'arquivo': re.sub(r'^[0-9a-f]{8}-', '', Path(caminho).name).replace('_', ' '), **resumo}
     (DADOS / 'atualizacao.json').write_text(json.dumps(stamp, ensure_ascii=False, indent=1), encoding='utf-8')
     print(json.dumps(stamp, ensure_ascii=False))
 
