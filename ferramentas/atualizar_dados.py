@@ -75,7 +75,6 @@ def titulo(s):
 def mapear(ativo, seg_txt, ordem, oae_seg):
     at, sg0 = ativo.upper().strip(), seg_txt.upper().strip()
     ids = list(ATIVO.get(at, []))
-    if at in ('GO-347', 'PI GO-347') and '1.4B' in seg_txt: ids = [4]
     segs = []
     if sg0 and sg0 != 'GERAL':
         if sg0 in SEGNAME: segs = [oae_seg.get(i) for i in SEGNAME[sg0]]

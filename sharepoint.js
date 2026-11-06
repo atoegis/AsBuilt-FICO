@@ -98,7 +98,6 @@
   function mapear(segAtivo, segTxt, ordem, oaeSeg) {
     const at = segAtivo.toUpperCase().trim(), sg0 = segTxt.toUpperCase().trim();
     let ids = ATIVO[at] || [];
-    if ((at === 'GO-347' || at === 'PI GO-347') && segTxt.includes('1.4B')) ids = [4];
     let segs = [];
     if (sg0 && sg0 !== 'GERAL') {
       if (SEGNAME[sg0]) segs = SEGNAME[sg0].map((i) => oaeSeg[i]);
