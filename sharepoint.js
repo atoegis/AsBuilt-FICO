@@ -118,6 +118,7 @@
     for (const r of rows) {
       const nec = txt(r['Necessário Emissão de As Built?']).toUpperCase();
       if (ehBD && nec !== 'SIM' && nec !== 'AVALIAR') continue;
+      if (!ehBD && nec === 'AVALIAR') continue; // obrigatórios: AVALIAR fica fora do painel
       let sd = txt(r['Status do As Built Detalhado']); sd = CANON[sd.toLowerCase()] || sd;
       let pend = txt(r['Pendência na implantação?']).toUpperCase(); pend = pend === 'SIM' ? 'SIM' : pend.startsWith('N') ? 'NÃO' : '';
       let disc = txt(r['Disciplina Descrição']); if (disc && disc === disc.toUpperCase()) disc = disc.toLowerCase().replace(/(^|[\s/])\S/g, (m) => m.toUpperCase());

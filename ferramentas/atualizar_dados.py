@@ -101,6 +101,7 @@ def converter(linhas, eh_bd, ordem, oae_seg):
         g = lambda k: r.get(k)
         nec = txt(g('Necessário Emissão de As Built?')).upper()
         if eh_bd and nec not in ('SIM', 'AVALIAR'): continue
+        if not eh_bd and nec == 'AVALIAR': continue  # obrigatórios: AVALIAR fica fora do painel
         sd = txt(g('Status do As Built Detalhado')); sd = CANON.get(sd.lower(), sd)
         pend = txt(g('Pendência na implantação?')).upper()
         pend = 'SIM' if pend == 'SIM' else 'NÃO' if pend.startswith('N') else ''
