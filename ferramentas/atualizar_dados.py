@@ -16,7 +16,10 @@ DADOS = RAIZ / 'dados'
 CANON = {s.lower(): s for s in ['AS Built Finalizado', 'Aprovado Pela Vale', 'Aguardando análise Vale', 'Pendente análise CDOC',
          'Reprovado Pela Vale', 'Reprovado pelo CDOC', 'Não Emitido', 'Cancelado', 'Cancelado pela Vale',
          'Sem Numeração Correspondente', 'Não se Aplica', 'Pendência da Implantação', 'Finalizado']}
-ATIVO = {'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29],
+ATIVO = {  # nomes novos da planilha (nov/2026)
+         'PONTE CORREGO BALDAIA': [9], 'PONTE CORREGO PEITO DE MOÇA': [29], 'PONTE CRIXÁS AÇU': [8], 'PONTE RIBEIRÃO DO MEIO': [5], 'PONTE RIO DO PEIXE I': [6], 'PONTE RIO DOS BOIS': [2], 'PONTE RIO PRETO': [18], 'PI GO-154': [7], 'PI GO-164': [17], 'PI GO-347': [1], 'PI GO-556': [3], 'PI MT-100': [21], 'PI MT-326': [28],
+         # nomes anteriores, mantidos para versões antigas da planilha
+         'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29],
          'PI GO-156': [11], 'TRAVESSIA GO-156': [11], 'PI GO-336': [13], 'TRAVESSIA GO-336': [13], 'PI SOB A MT-326': [28], 'TRAVESSIA GO-164': [17],
          'TRAVESSIA MT-100': [21], 'PONTE CORIXO DA SAUDADE': [22], 'PONTE CORIXO MOLHA MALA': [24], 'PONTE CÓRREGO BARREIRO': [15],
          'PONTE SOBRE CORREGO BARREIRO': [15], "PONTE RIBEIRÃO D'ANTA": [12], "RIBEIRÃO D'ANTA": [12], 'RIBEIRAO DANTA': [12], 'RIBEIRÃO DANTA': [12],
@@ -72,7 +75,7 @@ def titulo(s):
 def mapear(ativo, seg_txt, ordem, oae_seg):
     at, sg0 = ativo.upper().strip(), seg_txt.upper().strip()
     ids = list(ATIVO.get(at, []))
-    if at == 'GO-347' and '1.4B' in seg_txt: ids = [4]
+    if at in ('GO-347', 'PI GO-347') and '1.4B' in seg_txt: ids = [4]
     segs = []
     if sg0 and sg0 != 'GERAL':
         if sg0 in SEGNAME: segs = [oae_seg.get(i) for i in SEGNAME[sg0]]
