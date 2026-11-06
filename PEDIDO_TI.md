@@ -1,10 +1,10 @@
-# Pedido à TI — leitura da planilha NOVA BD ASBUILT pelo Painel As Built
+# Pedido à TI — leitura da planilha NOVA BD ASBUILT-PAINEL pelo Painel As Built
 
 ## Objetivo
 O Painel As Built (site estático hospedado no Firebase) precisa ler, em tempo real, a planilha
-`NOVA BD ASBUILT.xlsx` do SharePoint:
+`NOVA BD ASBUILT-PAINEL.xlsx` do SharePoint:
 
-https://globalvale.sharepoint.com/sites/LACAL/Shared Documents/FICO/FICO - AS BUILT/NOVA BD ASBUILT.xlsx
+https://globalvale.sharepoint.com/sites/LACAL/Shared Documents/FICO/FICO - AS BUILT/NOVA BD ASBUILT-PAINEL.xlsx
 
 A leitura é feita no navegador de quem abre o painel, com a própria conta Microsoft do usuário
 (permissão delegada). Ninguém vê dados aos quais já não tenha acesso no SharePoint.

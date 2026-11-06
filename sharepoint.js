@@ -1,4 +1,4 @@
-/* Leitura direta da planilha NOVA BD ASBUILT no SharePoint pelo Microsoft Graph.
+/* Leitura direta da planilha NOVA BD ASBUILT-PAINEL no SharePoint pelo Microsoft Graph.
    Converte as linhas das tabelas PBI e PBI_9 no mesmo formato dos CSV de dados/ e entrega ao painel. */
 (function () {
   const CFG = window.ASBUILT_CONFIG || {};

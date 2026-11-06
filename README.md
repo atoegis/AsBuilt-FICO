@@ -13,7 +13,7 @@ Visão geral, Contratadas, Curva S e aderência, Documentos obrigatórios e Mapa
 - `vendor/msal-browser.min.js` — biblioteca oficial de login da Microsoft (MSAL 3.27).
 - `PEDIDO_TI.md` — o que pedir à TI.
 - `dados/` — bases em CSV:
-  - `asbuilt_documentos.csv` e `asbuilt_obrigatorios.csv`: planilha NOVA BD ASBUILT (abas BD ASBUILT e Documentos Obrigatorios),
+  - `asbuilt_documentos.csv` e `asbuilt_obrigatorios.csv`: planilha NOVA BD ASBUILT-PAINEL (abas BD ASBUILT e Documentos Obrigatorios),
     com as colunas "Segmentos (mapa)" e "OAE (mapa)" calculadas a partir da Tabela de segmentos rev9;
   - `tracado_segmentos.csv`, `tracado_oaes.csv`, `tracado_municipios.csv`: Tabela de segmentos rev9;
   - `tracado_eixo.csv`: eixo georreferenciado km 0 a 292 (mesma geometria do Mapa Superestrutura).
@@ -29,7 +29,7 @@ o navegador bloqueia a leitura dos CSV.
 ## Dados ao vivo do SharePoint
 Com `clientId` e `tenantId` preenchidos em `config.js`, o painel mostra o botão **Entrar com Microsoft**.
 Depois do login, ele lê as tabelas `PBI` (aba BD ASBUILT) e `PBI_9` (aba Documentos Obrigatorios)
-da planilha NOVA BD ASBUILT no SharePoint, a cada abertura ou no botão **Atualizar agora**.
+da planilha NOVA BD ASBUILT-PAINEL no SharePoint, a cada abertura ou no botão **Atualizar agora**.
 Veja em `PEDIDO_TI.md` o que pedir à TI para gerar esses dois valores.
 
 Sem login (ou sem `config.js` preenchido), o painel usa a cópia salva em `dados/`.

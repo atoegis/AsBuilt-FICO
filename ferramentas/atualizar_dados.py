@@ -1,10 +1,10 @@
 """Atualiza dados/asbuilt_documentos.csv e dados/asbuilt_obrigatorios.csv a partir da
-planilha NOVA BD ASBUILT.xlsx (tabelas PBI e PBI_9).
+planilha NOVA BD ASBUILT-PAINEL.xlsx (tabelas PBI e PBI_9).
 
 Mesmas regras de conversão do sharepoint.js, para que a cópia salva e a leitura ao vivo
 gerem exatamente os mesmos dados.
 
-Uso:  python ferramentas/atualizar_dados.py "NOVA BD ASBUILT.xlsx"
+Uso:  python ferramentas/atualizar_dados.py "NOVA BD ASBUILT-PAINEL.xlsx"
 """
 import csv, datetime as dt, json, re, sys
 from pathlib import Path
@@ -171,4 +171,4 @@ def main(caminho):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else 'NOVA BD ASBUILT.xlsx')
+    main(sys.argv[1] if len(sys.argv) > 1 else 'NOVA BD ASBUILT-PAINEL.xlsx')
