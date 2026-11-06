@@ -79,6 +79,7 @@
   const SEGNAME = { 'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONTE RIO SANTA MARIA': [14], 'PONTE SOBRE CORREGO BARREIRO': [15], 'PF RIO PRETO': [18], 'PF RIO DO PEIXE III': [19], 'PONTE SOBRE RIO CRIXAS MIRIM': [16], 'RIO VERMELHO': [10], "RIBEIRÃO D'ANTA": [12], 'PI GO-156': [11], 'PI GO-336': [13], 'PI SOB A RODOVIA MT-100': [21], 'PI GO-164': [17] };
   // Lote definido pelo pacote: LOTE 1 = PCT 1-3; LOTE 2 = PCT 4-8; LOTE 3 = PCT 9-11
   const LOTE_PCT = { 1: 'LOTE 1', 2: 'LOTE 1', 3: 'LOTE 1', 4: 'LOTE 2', 5: 'LOTE 2', 6: 'LOTE 2', 7: 'LOTE 2', 8: 'LOTE 2', 9: 'LOTE 3', 10: 'LOTE 3', 11: 'LOTE 3' };
+  const pacoteDe = (p) => p.replace(/^PACOTE 1[AB]$/, 'PACOTE 1'); // PACOTE 1A e 1B = PACOTE 1
   function loteDe(pacote, lote) {
     const ls = new Set((pacote.match(/\d+/g) || []).map((n) => LOTE_PCT[+n]));
     if (ls.size === 1 && !ls.has(undefined)) return [...ls][0];
@@ -122,7 +123,7 @@
       const mp = mapear(ativo, seg, ref.ordem, ref.oaeSeg);
       const o = { 'ID': ++id, 'Número Vale': txt(r['Número Vale']), 'Título': txt(r['Título']) };
       if (ehBD) o['Necessário Emissão'] = nec;
-      Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': loteDe(txt(r['Pacote']).toUpperCase(), txt(r['Lote']).toUpperCase()), 'Pacote': txt(r['Pacote']).toUpperCase(), 'Segmento': seg, 'Ativo': ativo,
+      Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': loteDe(pacoteDe(txt(r['Pacote']).toUpperCase()), txt(r['Lote']).toUpperCase()), 'Pacote': pacoteDe(txt(r['Pacote']).toUpperCase()), 'Segmento': seg, 'Ativo': ativo,
         'Empresa Responsável': txt(r['Empresa Responsável Pelo As Built']), 'Empresa Colaboradora': txt(r['Empresa Colaboradora']), 'NAP Associada': txt(r['NAP Associada']),
         'Data Prevista': dataDe(r['Data Prevista']), 'Data Reprogramada': dataDe(r['Data Reprogramada']), 'Data Ação CDOC': dataDe(r['Data da Ação do CDOC']), 'Data Tendência': dataDe(r['Data Tendência']), 'Data Conclusão': dataDe(r['Data Conclusão']),
         'Nº Reprovações': String(parseInt(r['Número de Reprovações'], 10) || 0), 'Pendência Implantação': pend, 'Status Documento': txt(r['Status Documento']), 'Status Detalhado': sd,

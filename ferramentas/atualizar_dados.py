@@ -31,6 +31,11 @@ EXCEL0 = dt.datetime(1899, 12, 30)
 LOTE_PCT = {**{n: 'LOTE 1' for n in (1, 2, 3)}, **{n: 'LOTE 2' for n in (4, 5, 6, 7, 8)}, **{n: 'LOTE 3' for n in (9, 10, 11)}}
 
 
+def pacote_de(p):
+    """PACOTE 1A e 1B são tratados como PACOTE 1."""
+    return re.sub(r'^PACOTE 1[AB]$', 'PACOTE 1', p)
+
+
 def lote_de(pacote, lote):
     """Lote pelo número do pacote; sem pacote, mantém o da planilha se for LOTE 1, 2, 3 ou GERAL; senão fica vazio."""
     ls = {LOTE_PCT.get(int(n)) for n in re.findall(r'\d+', pacote)}
@@ -103,8 +108,8 @@ def converter(linhas, eh_bd, ordem, oae_seg):
         except (TypeError, ValueError): repr_ = '0'
         o = {'ID': 0, 'Número Vale': txt(g('Número Vale')), 'Título': txt(g('Título'))}
         if eh_bd: o['Necessário Emissão'] = nec
-        o.update({'Disciplina': disc, 'Especialidade': txt(g('Especialidade de Engenharia')), 'Lote': lote_de(txt(g('Pacote')).upper(), txt(g('Lote')).upper()),
-                  'Pacote': txt(g('Pacote')).upper(), 'Segmento': seg, 'Ativo': ativo,
+        o.update({'Disciplina': disc, 'Especialidade': txt(g('Especialidade de Engenharia')), 'Lote': lote_de(pacote_de(txt(g('Pacote')).upper()), txt(g('Lote')).upper()),
+                  'Pacote': pacote_de(txt(g('Pacote')).upper()), 'Segmento': seg, 'Ativo': ativo,
                   'Empresa Responsável': txt(g('Empresa Responsável Pelo As Built')), 'Empresa Colaboradora': txt(g('Empresa Colaboradora')),
                   'NAP Associada': txt(g('NAP Associada')), 'Data Prevista': data_de(g('Data Prevista')),
                   'Data Reprogramada': data_de(g('Data Reprogramada')), 'Data Ação CDOC': data_de(g('Data da Ação do CDOC')),

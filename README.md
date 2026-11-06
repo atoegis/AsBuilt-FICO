@@ -36,6 +36,7 @@ Sem login (ou sem `config.js` preenchido), o painel usa a cópia salva em `dados
 
 ## Regras que o painel aplica na planilha
 - Usa as tabelas `PBI` e `PBI_9`. Não renomeie as tabelas nem os cabeçalhos das colunas.
+- PACOTE 1A e 1B são tratados como PACOTE 1 (também no diagrama linear).
 - Lote definido pelo Pacote: LOTE 1 = PCT 1, 2 e 3; LOTE 2 = PCT 4, 5, 6, 7 e 8; LOTE 3 = PCT 9, 10 e 11.
   Sem pacote, o painel mantém o lote da planilha se for LOTE 1, 2, 3 ou GERAL; outros valores (ex.: LOTE 4, LOTE 5) ficam sem lote.
 - Na BD ASBUILT, considera apenas "Necessário Emissão de As Built?" = SIM ou AVALIAR.
