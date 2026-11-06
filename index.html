@@ -437,7 +437,7 @@ body{background:#eef2f8}
     </div>
     <div class="ab-card wide" id="card-strip">
       <h3>Diagrama linear da obra</h3>
-      <p class="ab-note">Km 0 a 364,8 com lotes, pacotes, segmentos, OAEs (losangos) e municípios. Inclui os pacotes 9 a 11 (Lote 3), que ainda não têm eixo georreferenciado no mapa.</p>
+      <p class="ab-note">Km 0 a 364,8 com lotes, pacotes, segmentos, OAEs (losangos) e municípios. </p>
       <div class="ab-strip" id="c-strip" data-source="tracado_segmentos tracado_oaes tracado_municipios"></div>
     </div>
     <div class="ab-card wide" id="card-mdocs">
@@ -1020,11 +1020,13 @@ body{background:#eef2f8}
     if (ds.some((d) => d.status === 'error')) return 'error';
     if (ds.some((d) => d.status !== 'ok')) return null;
     if (M.geo && M.geo.src === ds[0].data && M.geo.src2 === ds[1].data) return M.geo;
-    const E = ds[0].data.map((r) => ({ km: +r['Km'], lon: +r['Longitude'], lat: +r['Latitude'] })).sort((a, b) => a.km - b.km);
+    const pt = (r) => ({ km: +r['Km'], lon: +r['Longitude'], lat: +r['Latitude'] });
+    const E = ds[0].data.filter((r) => !r['Ramal']).map(pt).sort((a, b) => a.km - b.km);
+    const A = ds[0].data.filter((r) => r['Ramal'] === 'ALÇA').map(pt).sort((a, b) => a.km - b.km); // ramal da Alça
     const S = ds[1].data.map((r) => ({ code: r['Segmento'], lote: r['Lote'], pac: r['Pacote'], cons: r['Construtora'], kmi: +r['Km inicial'], kmf: +r['Km final'], ext: +r['Extensão (km)'] }));
     const O = ds[2].data.map((r) => ({ id: r['ID OAE'], name: r['OAE'], seg: r['Segmento'], km: +r['Km'], aprox: r['Posição aproximada'] === 'sim' }));
     const MU = ds[3].data.map((r) => ({ name: r['Município'], kmi: +r['Km inicial'], kmf: +r['Km final'] }));
-    M.geo = { src: ds[0].data, src2: ds[1].data, E, S, O, MU, maxKm: E[E.length - 1].km, fundo: null };
+    M.geo = { src: ds[0].data, src2: ds[1].data, E, A, S, O, MU, maxKm: E[E.length - 1].km, fundo: null };
     return M.geo;
   }
   function fundo() {
@@ -1055,6 +1057,9 @@ body{background:#eef2f8}
     const a = E[lo], b = E[hi], t = (km - a.km) / (b.km - a.km || 1);
     return [a.lon + (b.lon - a.lon) * t, a.lat + (b.lat - a.lat) * t];
   }
+  // linha de um segmento: a Alça usa o próprio ramal; os demais, o eixo principal
+  const lnOf = (G, s) => (s.code === 'ALÇA' ? (G.A.length > 1 ? G.A : null) : s.kmi < G.maxKm ? G.E : null);
+  const segCo = (G, s) => { const L = lnOf(G, s); return L ? sliceE(L, Math.max(s.kmi, L[0].km), Math.min(s.kmf, L[L.length - 1].km)) : null; };
   function sliceE(E, a, b) { const out = [atKm(E, a)]; for (const p of E) if (p.km > a && p.km < b) out.push([p.lon, p.lat]); out.push(atKm(E, b)); return out; }
 
   function segStats(rows, G) {
@@ -1164,10 +1169,10 @@ body{background:#eef2f8}
     const W = box.clientWidth || 700, H = Math.round(Math.min(620, Math.max(420, W * 0.62)));
     box.style.height = H + 'px';
     $('m-ramp').style.zIndex = 3; $('m-readout').style.zIndex = 3; document.querySelector('.ab-zoom').style.zIndex = 3;
-    const fc = { type: 'FeatureCollection', features: G.S.filter((s) => s.code !== 'ALÇA' && s.kmi < G.maxKm).map((s) => {
+    const fc = { type: 'FeatureCollection', features: G.S.filter((s) => lnOf(G, s)).map((s) => {
       const o = S.st.get(s.code);
       return { type: 'Feature', properties: { c: s.code, p: s.pac, k: s.cons, t: o.total, v: o.total ? sc.val(o) : '', color: o.total ? sc.f(o) : '#7c8aa3', on: s.code === selC ? 1 : 0 },
-        geometry: { type: 'LineString', coordinates: sliceE(G.E, Math.max(s.kmi, 0), Math.min(s.kmf, G.maxKm)) } };
+        geometry: { type: 'LineString', coordinates: segCo(G, s) } };
     }) };
     if (!M.gl) {
       box.replaceChildren(); box.style.cursor = 'auto';
@@ -1214,9 +1219,9 @@ body{background:#eef2f8}
     glFundo();
     (M.glMarkers || []).forEach((m) => m.remove()); M.glMarkers = [];
     for (const s of G.S) {
-      if (s.code === 'ALÇA' || s.kmi >= G.maxKm) continue;
+      const L = lnOf(G, s); if (!L) continue;
       const big = (s.kmf - s.kmi) > 9000 || s.code === selC; if (!big) continue;
-      const c = atKm(G.E, (Math.max(s.kmi, 0) + Math.min(s.kmf, G.maxKm)) / 2);
+      const c = atKm(L, (Math.max(s.kmi, L[0].km) + Math.min(s.kmf, L[L.length - 1].km)) / 2);
       const e = el('div'), i = el('div', null, s.code);
       i.style.cssText = `font-family:var(--f-display);font-size:${s.code === selC ? 18 : 15}px;letter-spacing:.03em;color:${s.code === selC ? '#e07d12' : '#16233a'};text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;transform:translateY(-15px);pointer-events:none`;
       e.append(i); M.glMarkers.push(new maplibregl.Marker({ element: e }).setLngLat(c).addTo(M.gl));
@@ -1230,7 +1235,8 @@ body{background:#eef2f8}
     }
     if (selC !== M.lastSel && M.lastSel !== undefined) {
       const s = G.S.find((q) => q.code === selC);
-      if (s && s.code !== 'ALÇA' && s.kmi < G.maxKm) { const co = sliceE(G.E, s.kmi, Math.min(s.kmf, G.maxKm)); M.gl.fitBounds(co.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(co[0], co[0])), { padding: 70, maxZoom: 14 }); }
+      const co = s && segCo(G, s);
+      if (co) { M.gl.fitBounds(co.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(co[0], co[0])), { padding: 70, maxZoom: 14 }); }
       else if (!selC) M.gl.fitBounds(M.glBounds, { padding: 40 });
     }
   }
@@ -1258,7 +1264,7 @@ body{background:#eef2f8}
       M.lastW = W;
     }
     const layer = svg.selectAll('g.lay').data([0]).join('g').attr('class', 'lay');
-    const segGeo = G.S.filter((s) => s.code !== 'ALÇA' && s.kmi < G.maxKm).map((s) => ({ s, coords: sliceE(G.E, Math.max(s.kmi, 0), Math.min(s.kmf, G.maxKm)) }));
+    const segGeo = G.S.filter((s) => lnOf(G, s)).map((s) => ({ s, L: lnOf(G, s), coords: segCo(G, s) }));
     M.paint = () => {
       const t = M.t;
       const P2 = (c) => { const p = baseP(c); return [t.x + p[0] * t.k, t.y + p[1] * t.k]; };
@@ -1288,6 +1294,7 @@ body{background:#eef2f8}
         layer.append('text').attr('x', p[0]).attr('y', p[1]).attr('text-anchor', 'middle').style('font-size', t.k >= 2 ? '11px' : '9.5px').style('fill', 'var(--ink-soft)').style('opacity', 0.85).style('paint-order', 'stroke').style('stroke', 'var(--paper)').attr('stroke-width', 2.5).text(r.nome + (r.uf !== 'GO' ? ' (' + r.uf + ')' : ''));
       }
       layer.append('path').attr('d', path(line)).style('fill', 'none').style('stroke', 'var(--paper)').attr('stroke-width', 12).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      if (G.A.length > 1) layer.append('path').attr('d', path({ type: 'LineString', coordinates: G.A.map((p) => [p.lon, p.lat]) })).style('fill', 'none').style('stroke', 'var(--paper)').attr('stroke-width', 12).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
       // segmentos
       for (const g of segGeo) {
         const o = S.st.get(g.s.code), c = colorOf(sc, o), on = g.s.code === selC;
@@ -1300,12 +1307,13 @@ body{background:#eef2f8}
       // marcos de segmento e rótulos
       const k = t.k;
       segGeo.forEach((g, i) => {
-        const p0 = P2(atKm(G.E, g.s.kmi));
+        const L = g.L, k0 = L[0].km, k1 = L[L.length - 1].km;
+        const p0 = P2(atKm(L, Math.max(g.s.kmi, k0)));
         layer.append('circle').attr('cx', p0[0]).attr('cy', p0[1]).attr('r', 3).style('fill', 'var(--paper)').style('stroke', 'var(--ink-mid)').attr('stroke-width', 1.2);
-        const mid = (Math.max(g.s.kmi, 0) + Math.min(g.s.kmf, G.maxKm)) / 2;
-        const a = P2(atKm(G.E, mid - 400)), b = P2(atKm(G.E, mid + 400));
+        const mid = (Math.max(g.s.kmi, k0) + Math.min(g.s.kmf, k1)) / 2;
+        const a = P2(atKm(L, mid - 400)), b = P2(atKm(L, mid + 400));
         let nx = -(b[1] - a[1]), ny = b[0] - a[0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-        const side = i % 2 ? 1 : -1, pm = P2(atKm(G.E, mid)), off = 15;
+        const side = i % 2 ? 1 : -1, pm = P2(atKm(L, mid)), off = 15;
         const showAll = k >= 2.2 || (g.s.kmf - g.s.kmi) > 9000 || g.s.code === selC;
         if (!showAll) return;
         layer.append('text').attr('x', pm[0] + nx * off * side).attr('y', pm[1] + ny * off * side).attr('dy', '.35em').attr('text-anchor', 'middle')
@@ -1357,8 +1365,9 @@ body{background:#eef2f8}
     if (selC !== M.lastSel) {
       let t = d3.zoomIdentity;
       const s = G.S.find((q) => q.code === selC);
-      if (s && s.code !== 'ALÇA' && s.kmi < G.maxKm) {
-        const pts = sliceE(G.E, s.kmi, Math.min(s.kmf, G.maxKm)).map((c) => baseP(c));
+      const co = s && segCo(G, s);
+      if (co) {
+        const pts = co.map((c) => baseP(c));
         const [x0, x1] = d3.extent(pts, (p) => p[0]), [y0, y1] = d3.extent(pts, (p) => p[1]);
         const kk = Math.min(9, 0.55 / Math.max((x1 - x0) / W, (y1 - y0) / H, 0.02));
         t = d3.zoomIdentity.translate(W / 2, H / 2).scale(kk).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
