@@ -77,6 +77,12 @@
   const CANON = Object.fromEntries(['AS Built Finalizado', 'Aprovado Pela Vale', 'Aguardando análise Vale', 'Pendente análise CDOC', 'Reprovado Pela Vale', 'Reprovado pelo CDOC', 'Não Emitido', 'Cancelado', 'Cancelado pela Vale', 'Sem Numeração Correspondente', 'Não se Aplica', 'Pendência da Implantação', 'Finalizado'].map((s) => [s.toLowerCase(), s]));
   const ATIVO = { 'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29], 'PI GO-156': [11], 'TRAVESSIA GO-156': [11], 'PI GO-336': [13], 'TRAVESSIA GO-336': [13], 'PI SOB A MT-326': [28], 'TRAVESSIA GO-164': [17], 'TRAVESSIA MT-100': [21], 'PONTE CORIXO DA SAUDADE': [22], 'PONTE CORIXO MOLHA MALA': [24], 'PONTE CÓRREGO BARREIRO': [15], 'PONTE SOBRE CORREGO BARREIRO': [15], "PONTE RIBEIRÃO D'ANTA": [12], "RIBEIRÃO D'ANTA": [12], 'RIBEIRAO DANTA': [12], 'RIBEIRÃO DANTA': [12], 'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONTE RIO CRISTALINO': [23], 'PONTE RIO CRISTALINO E PONTE CORIXO MOLHA MALA': [23, 24], 'PONTE RIO CRIXÁS-MIRIM': [16], 'PONTE RIO DAS MORTES': [26], 'PONTE RIO PEIXE III': [19], 'RIO DO PEIXE I': [6], 'PONTE RIO SANTA MARIA': [14], 'PONTE RIO VERMELHO': [10], 'RIO VERMELHO': [10], 'RIBEIRÃO DO MEIO': [5], 'RIO DOS BOIS': [2], 'RIO PRETO': [18] };
   const SEGNAME = { 'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONTE RIO SANTA MARIA': [14], 'PONTE SOBRE CORREGO BARREIRO': [15], 'PF RIO PRETO': [18], 'PF RIO DO PEIXE III': [19], 'PONTE SOBRE RIO CRIXAS MIRIM': [16], 'RIO VERMELHO': [10], "RIBEIRÃO D'ANTA": [12], 'PI GO-156': [11], 'PI GO-336': [13], 'PI SOB A RODOVIA MT-100': [21], 'PI GO-164': [17] };
+  // Lote definido pelo pacote: LOTE 1 = PCT 1-3; LOTE 2 = PCT 4-8; LOTE 3 = PCT 9-11
+  const LOTE_PCT = { 1: 'LOTE 1', 2: 'LOTE 1', 3: 'LOTE 1', 4: 'LOTE 2', 5: 'LOTE 2', 6: 'LOTE 2', 7: 'LOTE 2', 8: 'LOTE 2', 9: 'LOTE 3', 10: 'LOTE 3', 11: 'LOTE 3' };
+  function loteDe(pacote, lote) {
+    const ls = new Set((pacote.match(/\d+/g) || []).map((n) => LOTE_PCT[+n]));
+    return ls.size === 1 && !ls.has(undefined) ? [...ls][0] : lote;
+  }
   const txt = (v) => { if (v == null) return ''; const s = String(v).replace(/\s+/g, ' ').trim(); return s === '0' || s === '0.0' ? '' : s; };
   const iso = (d) => d.toISOString().slice(0, 10);
   function dataDe(v) {
@@ -115,7 +121,7 @@
       const mp = mapear(ativo, seg, ref.ordem, ref.oaeSeg);
       const o = { 'ID': ++id, 'Número Vale': txt(r['Número Vale']), 'Título': txt(r['Título']) };
       if (ehBD) o['Necessário Emissão'] = nec;
-      Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': txt(r['Lote']).toUpperCase(), 'Pacote': txt(r['Pacote']).toUpperCase(), 'Segmento': seg, 'Ativo': ativo,
+      Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': loteDe(txt(r['Pacote']).toUpperCase(), txt(r['Lote']).toUpperCase()), 'Pacote': txt(r['Pacote']).toUpperCase(), 'Segmento': seg, 'Ativo': ativo,
         'Empresa Responsável': txt(r['Empresa Responsável Pelo As Built']), 'Empresa Colaboradora': txt(r['Empresa Colaboradora']), 'NAP Associada': txt(r['NAP Associada']),
         'Data Prevista': dataDe(r['Data Prevista']), 'Data Reprogramada': dataDe(r['Data Reprogramada']), 'Data Ação CDOC': dataDe(r['Data da Ação do CDOC']), 'Data Tendência': dataDe(r['Data Tendência']), 'Data Conclusão': dataDe(r['Data Conclusão']),
         'Nº Reprovações': String(parseInt(r['Número de Reprovações'], 10) || 0), 'Pendência Implantação': pend, 'Status Documento': txt(r['Status Documento']), 'Status Detalhado': sd,

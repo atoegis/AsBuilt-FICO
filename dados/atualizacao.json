@@ -1,5 +1,5 @@
 {
- "atualizado_em": "2026-11-06T09:59-03:00",
+ "atualizado_em": "2026-11-06T11:40-03:00",
  "arquivo": "NOVA BD ASBUILT-PAINEL.xlsx",
  "documentos": {
   "aba": "BD ASBUILT",
@@ -7,6 +7,6 @@
  },
  "obrigatorios": {
   "aba": "Documentos Obrigatorios",
-  "linhas": 1636
+  "linhas": 1394
  }
 }

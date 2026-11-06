@@ -27,6 +27,14 @@ SEGNAME = {'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONT
            'PF RIO PRETO': [18], 'PF RIO DO PEIXE III': [19], 'PONTE SOBRE RIO CRIXAS MIRIM': [16], 'RIO VERMELHO': [10], "RIBEIRÃO D'ANTA": [12],
            'PI GO-156': [11], 'PI GO-336': [13], 'PI SOB A RODOVIA MT-100': [21], 'PI GO-164': [17]}
 EXCEL0 = dt.datetime(1899, 12, 30)
+# Lote definido pelo pacote: LOTE 1 = PCT 1-3; LOTE 2 = PCT 4-8; LOTE 3 = PCT 9-11
+LOTE_PCT = {**{n: 'LOTE 1' for n in (1, 2, 3)}, **{n: 'LOTE 2' for n in (4, 5, 6, 7, 8)}, **{n: 'LOTE 3' for n in (9, 10, 11)}}
+
+
+def lote_de(pacote, lote):
+    """Lote pelo número do pacote; sem pacote (ou pacote que cruza lotes), mantém o da planilha."""
+    ls = {LOTE_PCT.get(int(n)) for n in re.findall(r'\d+', pacote)}
+    return ls.pop() if len(ls) == 1 and None not in ls else lote
 
 
 def txt(v):
@@ -94,7 +102,7 @@ def converter(linhas, eh_bd, ordem, oae_seg):
         except (TypeError, ValueError): repr_ = '0'
         o = {'ID': 0, 'Número Vale': txt(g('Número Vale')), 'Título': txt(g('Título'))}
         if eh_bd: o['Necessário Emissão'] = nec
-        o.update({'Disciplina': disc, 'Especialidade': txt(g('Especialidade de Engenharia')), 'Lote': txt(g('Lote')).upper(),
+        o.update({'Disciplina': disc, 'Especialidade': txt(g('Especialidade de Engenharia')), 'Lote': lote_de(txt(g('Pacote')).upper(), txt(g('Lote')).upper()),
                   'Pacote': txt(g('Pacote')).upper(), 'Segmento': seg, 'Ativo': ativo,
                   'Empresa Responsável': txt(g('Empresa Responsável Pelo As Built')), 'Empresa Colaboradora': txt(g('Empresa Colaboradora')),
                   'NAP Associada': txt(g('NAP Associada')), 'Data Prevista': data_de(g('Data Prevista')),
