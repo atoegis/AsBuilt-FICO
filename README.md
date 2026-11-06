@@ -37,7 +37,7 @@ Sem login (ou sem `config.js` preenchido), o painel usa a cópia salva em `dados
 ## Regras que o painel aplica na planilha
 - Usa as tabelas `PBI` e `PBI_9`. Não renomeie as tabelas nem os cabeçalhos das colunas.
 - Lote definido pelo Pacote: LOTE 1 = PCT 1, 2 e 3; LOTE 2 = PCT 4, 5, 6, 7 e 8; LOTE 3 = PCT 9, 10 e 11.
-  Documentos sem pacote mantêm o lote informado na planilha.
+  Sem pacote, o painel mantém o lote da planilha se for LOTE 1, 2, 3 ou GERAL; outros valores (ex.: LOTE 4, LOTE 5) ficam sem lote.
 - Na BD ASBUILT, considera apenas "Necessário Emissão de As Built?" = SIM ou AVALIAR.
 - Localiza cada documento no traçado pela coluna Segmento ou, se vazia, pelo Ativo (lista de OAEs da Tabela de segmentos rev9).
   Nomes novos de OAE ou de segmento precisam ser incluídos em `sharepoint.js` (listas ATIVO e SEGNAME).

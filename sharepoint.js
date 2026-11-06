@@ -81,7 +81,8 @@
   const LOTE_PCT = { 1: 'LOTE 1', 2: 'LOTE 1', 3: 'LOTE 1', 4: 'LOTE 2', 5: 'LOTE 2', 6: 'LOTE 2', 7: 'LOTE 2', 8: 'LOTE 2', 9: 'LOTE 3', 10: 'LOTE 3', 11: 'LOTE 3' };
   function loteDe(pacote, lote) {
     const ls = new Set((pacote.match(/\d+/g) || []).map((n) => LOTE_PCT[+n]));
-    return ls.size === 1 && !ls.has(undefined) ? [...ls][0] : lote;
+    if (ls.size === 1 && !ls.has(undefined)) return [...ls][0];
+    return ['LOTE 1', 'LOTE 2', 'LOTE 3', 'GERAL'].includes(lote) ? lote : '';
   }
   const txt = (v) => { if (v == null) return ''; const s = String(v).replace(/\s+/g, ' ').trim(); return s === '0' || s === '0.0' ? '' : s; };
   const iso = (d) => d.toISOString().slice(0, 10);

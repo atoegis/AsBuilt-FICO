@@ -32,9 +32,10 @@ LOTE_PCT = {**{n: 'LOTE 1' for n in (1, 2, 3)}, **{n: 'LOTE 2' for n in (4, 5, 6
 
 
 def lote_de(pacote, lote):
-    """Lote pelo número do pacote; sem pacote (ou pacote que cruza lotes), mantém o da planilha."""
+    """Lote pelo número do pacote; sem pacote, mantém o da planilha se for LOTE 1, 2, 3 ou GERAL; senão fica vazio."""
     ls = {LOTE_PCT.get(int(n)) for n in re.findall(r'\d+', pacote)}
-    return ls.pop() if len(ls) == 1 and None not in ls else lote
+    if len(ls) == 1 and None not in ls: return ls.pop()
+    return lote if lote in ('LOTE 1', 'LOTE 2', 'LOTE 3', 'GERAL') else ''
 
 
 def txt(v):
