@@ -1384,7 +1384,7 @@ body{background:#eef2f8}
     lab('Lote', 4, yL + 13); lab('Pacote', 4, yP + 13); lab('Segmento', 4, yS + hS / 2 + 4); lab('Município', 4, yM + 13);
     for (const [i, lt] of lotes.entries()) {
       svg.append('rect').attr('x', x(lt.a)).attr('y', yL).attr('width', x(lt.b) - x(lt.a) - 2).attr('height', 18).attr('rx', 4).style('fill', i % 2 ? 'var(--navy)' : 'var(--blue)');
-      svg.append('text').attr('x', (x(lt.a) + x(lt.b)) / 2).attr('y', yL + 13).attr('text-anchor', 'middle').style('font-size', '11px').style('font-weight', '700').style('fill', '#fff').text('Lote ' + lt.l);
+      svg.append('text').attr('x', (x(lt.a) + x(lt.b)) / 2).attr('y', yL + 13).attr('text-anchor', 'middle').style('font-size', '11px').style('font-weight', '700').style('fill', '#fff').text('LOTE ' + lt.l);
     }
     const pacs = d3.groups(main, (s) => s.pac).map(([p, v]) => ({ p, a: d3.min(v, (s) => s.kmi), b: d3.max(v, (s) => s.kmf), cons: v[0].cons }));
     for (const pc of pacs) {
@@ -1427,7 +1427,7 @@ body{background:#eef2f8}
     let o, title, sub, kick;
     if (s) {
       o = S.st.get(s.code); kick = 'Segmento selecionado'; title = 'Segmento ' + s.code;
-      sub = `Lote ${s.lote} · ${s.pac} · ${s.cons} · km ${kmLab(s.kmi)} a ${kmLab(s.kmf)} (${NF.format(s.ext)} km)`;
+      sub = `LOTE ${s.lote} · ${s.pac} · ${s.cons} · km ${kmLab(s.kmi)} a ${kmLab(s.kmf)} (${NF.format(s.ext)} km)`;
     } else {
       o = { total: 0, fin: 0, tram: 0, pend: 0, atr: 0, rep: 0 };
       const seen = new Set();

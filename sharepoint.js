@@ -77,13 +77,14 @@
   const CANON = Object.fromEntries(['AS Built Finalizado', 'Aprovado Pela Vale', 'Aguardando análise Vale', 'Pendente análise CDOC', 'Reprovado Pela Vale', 'Reprovado pelo CDOC', 'Não Emitido', 'Cancelado', 'Cancelado pela Vale', 'Sem Numeração Correspondente', 'Não se Aplica', 'Pendência da Implantação', 'Finalizado'].map((s) => [s.toLowerCase(), s]));
   const ATIVO = { 'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29], 'PI GO-156': [11], 'TRAVESSIA GO-156': [11], 'PI GO-336': [13], 'TRAVESSIA GO-336': [13], 'PI SOB A MT-326': [28], 'TRAVESSIA GO-164': [17], 'TRAVESSIA MT-100': [21], 'PONTE CORIXO DA SAUDADE': [22], 'PONTE CORIXO MOLHA MALA': [24], 'PONTE CÓRREGO BARREIRO': [15], 'PONTE SOBRE CORREGO BARREIRO': [15], "PONTE RIBEIRÃO D'ANTA": [12], "RIBEIRÃO D'ANTA": [12], 'RIBEIRAO DANTA': [12], 'RIBEIRÃO DANTA': [12], 'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONTE RIO CRISTALINO': [23], 'PONTE RIO CRISTALINO E PONTE CORIXO MOLHA MALA': [23, 24], 'PONTE RIO CRIXÁS-MIRIM': [16], 'PONTE RIO DAS MORTES': [26], 'PONTE RIO PEIXE III': [19], 'RIO DO PEIXE I': [6], 'PONTE RIO SANTA MARIA': [14], 'PONTE RIO VERMELHO': [10], 'RIO VERMELHO': [10], 'RIBEIRÃO DO MEIO': [5], 'RIO DOS BOIS': [2], 'RIO PRETO': [18] };
   const SEGNAME = { 'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONTE RIO SANTA MARIA': [14], 'PONTE SOBRE CORREGO BARREIRO': [15], 'PF RIO PRETO': [18], 'PF RIO DO PEIXE III': [19], 'PONTE SOBRE RIO CRIXAS MIRIM': [16], 'RIO VERMELHO': [10], "RIBEIRÃO D'ANTA": [12], 'PI GO-156': [11], 'PI GO-336': [13], 'PI SOB A RODOVIA MT-100': [21], 'PI GO-164': [17] };
-  // Lote definido pelo pacote: LOTE 1 = PCT 1-3; LOTE 2 = PCT 4-8; LOTE 3 = PCT 9-11
-  const LOTE_PCT = { 1: 'LOTE 1', 2: 'LOTE 1', 3: 'LOTE 1', 4: 'LOTE 2', 5: 'LOTE 2', 6: 'LOTE 2', 7: 'LOTE 2', 8: 'LOTE 2', 9: 'LOTE 3', 10: 'LOTE 3', 11: 'LOTE 3' };
+  // Lote definido pelo pacote: LOTE 01 = PCT 1-3; LOTE 02 = PCT 4-8; LOTE 03 = PCT 9-11
+  const LOTE_PCT = { 1: 'LOTE 01', 2: 'LOTE 01', 3: 'LOTE 01', 4: 'LOTE 02', 5: 'LOTE 02', 6: 'LOTE 02', 7: 'LOTE 02', 8: 'LOTE 02', 9: 'LOTE 03', 10: 'LOTE 03', 11: 'LOTE 03' };
   const pacoteDe = (p) => p.replace(/^PACOTE 1[AB]$/, 'PACOTE 1'); // PACOTE 1A e 1B = PACOTE 1
   function loteDe(pacote, lote) {
     const ls = new Set((pacote.match(/\d+/g) || []).map((n) => LOTE_PCT[+n]));
     if (ls.size === 1 && !ls.has(undefined)) return [...ls][0];
-    return ['LOTE 1', 'LOTE 2', 'LOTE 3', 'GERAL'].includes(lote) ? lote : '';
+    lote = lote.replace(/^LOTE 0?([123])$/, 'LOTE 0$1');
+    return ['LOTE 01', 'LOTE 02', 'LOTE 03', 'GERAL'].includes(lote) ? lote : '';
   }
   const txt = (v) => { if (v == null) return ''; const s = String(v).replace(/\s+/g, ' ').trim(); return s === '0' || s === '0.0' ? '' : s; };
   const iso = (d) => d.toISOString().slice(0, 10);

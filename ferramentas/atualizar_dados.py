@@ -27,8 +27,8 @@ SEGNAME = {'PONTE RIO ARAGUAIA': [20], 'PONTE SOBRE O RIO ARAGUAIA': [20], 'PONT
            'PF RIO PRETO': [18], 'PF RIO DO PEIXE III': [19], 'PONTE SOBRE RIO CRIXAS MIRIM': [16], 'RIO VERMELHO': [10], "RIBEIRÃO D'ANTA": [12],
            'PI GO-156': [11], 'PI GO-336': [13], 'PI SOB A RODOVIA MT-100': [21], 'PI GO-164': [17]}
 EXCEL0 = dt.datetime(1899, 12, 30)
-# Lote definido pelo pacote: LOTE 1 = PCT 1-3; LOTE 2 = PCT 4-8; LOTE 3 = PCT 9-11
-LOTE_PCT = {**{n: 'LOTE 1' for n in (1, 2, 3)}, **{n: 'LOTE 2' for n in (4, 5, 6, 7, 8)}, **{n: 'LOTE 3' for n in (9, 10, 11)}}
+# Lote definido pelo pacote: LOTE 01 = PCT 1-3; LOTE 02 = PCT 4-8; LOTE 03 = PCT 9-11
+LOTE_PCT = {**{n: 'LOTE 01' for n in (1, 2, 3)}, **{n: 'LOTE 02' for n in (4, 5, 6, 7, 8)}, **{n: 'LOTE 03' for n in (9, 10, 11)}}
 
 
 def pacote_de(p):
@@ -37,10 +37,11 @@ def pacote_de(p):
 
 
 def lote_de(pacote, lote):
-    """Lote pelo número do pacote; sem pacote, mantém o da planilha se for LOTE 1, 2, 3 ou GERAL; senão fica vazio."""
+    """Lote pelo número do pacote; sem pacote, mantém o da planilha se for LOTE 1, 2, 3 (como LOTE 01, 02, 03) ou GERAL; senão fica vazio."""
     ls = {LOTE_PCT.get(int(n)) for n in re.findall(r'\d+', pacote)}
     if len(ls) == 1 and None not in ls: return ls.pop()
-    return lote if lote in ('LOTE 1', 'LOTE 2', 'LOTE 3', 'GERAL') else ''
+    lote = re.sub(r'^LOTE 0?([123])$', r'LOTE 0\1', lote)
+    return lote if lote in ('LOTE 01', 'LOTE 02', 'LOTE 03', 'GERAL') else ''
 
 
 def txt(v):
