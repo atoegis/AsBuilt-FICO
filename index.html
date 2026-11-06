@@ -1136,6 +1136,9 @@ body{background:#eef2f8}
     const ends = el('div', 'ends'); ends.append(el('span', null, sc.lo), el('span', null, sc.hi)); ramp.append(ends);
     const key = el('div', 'key'); const k1 = el('span'); k1.append(el('i'), document.createTextNode('OAE')); const k2 = el('span'); k2.append(el('i', 'nd'), document.createTextNode('sem docs')); key.append(k1, k2); ramp.append(key);
 
+    // zoom no filtro ativo: enquadra os segmentos que ficaram com documentos
+    M.fk = base + '|' + sels.map((x) => x.value).join('|');
+    M.foco = sels.some((x) => x.value) ? G.S.filter((s) => S.st.get(s.code).total && lnOf(G, s)).flatMap((s) => segCo(G, s)) : null;
     renderMap(G, S, sc, selC);
     renderStrip(G, S, sc, selC);
     renderDetail(G, S, sc, selC, isOb);
@@ -1238,7 +1241,12 @@ body{background:#eef2f8}
       const co = s && segCo(G, s);
       if (co) { M.gl.fitBounds(co.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(co[0], co[0])), { padding: 70, maxZoom: 14 }); }
       else if (!selC) M.gl.fitBounds(M.glBounds, { padding: 40 });
+    } else if (M.fk !== M.lastFk && !selC && (M.lastFk !== undefined || M.foco)) {
+      const co = M.foco && M.foco.length ? M.foco : null;
+      if (co) M.gl.fitBounds(co.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(co[0], co[0])), { padding: 60, maxZoom: 13 });
+      else M.gl.fitBounds(M.glBounds, { padding: 40 });
     }
+    M.lastFk = M.fk;
   }
   function glFundo() {
     if (!M.glReady) return;
@@ -1373,7 +1381,17 @@ body{background:#eef2f8}
         t = d3.zoomIdentity.translate(W / 2, H / 2).scale(kk).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
       }
       if (M.lastSel !== undefined && (selC || M.t.k > 1)) svg.transition().duration(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650).call(M.zoom.transform, t);
+    } else if (M.fk !== M.lastFk && !selC && (M.lastFk !== undefined || M.foco)) {
+      let t = d3.zoomIdentity;
+      if (M.foco && M.foco.length) {
+        const pts = M.foco.map((c) => baseP(c));
+        const [x0, x1] = d3.extent(pts, (p) => p[0]), [y0, y1] = d3.extent(pts, (p) => p[1]);
+        const kk = Math.max(1, Math.min(9, 0.8 / Math.max((x1 - x0) / W, (y1 - y0) / H, 0.02)));
+        t = d3.zoomIdentity.translate(W / 2, H / 2).scale(kk).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+      }
+      svg.transition().duration(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650).call(M.zoom.transform, t);
     }
+    M.lastFk = M.fk;
   }
   $('m-zin').addEventListener('click', () => M.gl ? M.gl.zoomIn() : M.svg && M.svg.transition().duration(250).call(M.zoom.scaleBy, 1.6));
   $('m-zout').addEventListener('click', () => M.gl ? M.gl.zoomOut() : M.svg && M.svg.transition().duration(250).call(M.zoom.scaleBy, 1 / 1.6));
