@@ -309,20 +309,6 @@ body{background:#eef2f8}
   <section id="contratadas" class="ab-page" role="tabpanel" aria-labelledby="tab-contratadas" hidden>
     <p class="ab-label">Controle de contratadas</p>
     <div class="ab-grid">
-      <div class="ab-card alert" id="card-atr">
-        <h3>Documentos atrasados</h3>
-        <p class="ab-note">Status do As Built dos documentos com status Atrasado.</p>
-        <div class="ab-split">
-          <div class="ab-chart dash-skeleton" id="c-atr" data-source="documentos"></div>
-          <div class="ab-legend" id="l-atr" style="flex-direction:column"></div>
-        </div>
-      </div>
-      <div class="ab-card accent" id="card-tempo">
-        <h3>Tempo em trâmite por empresa</h3>
-        <p class="ab-note">Aguardando análise Vale ou reprovados. Dias corridos desde a ação do CDOC até hoje.</p>
-        <div class="ab-legend" id="l-tempo"></div>
-        <div class="ab-chart dash-skeleton" id="c-tempo" data-source="documentos"></div>
-      </div>
       <div class="ab-card wide accent" id="card-tram">
         <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span>
           <span style="display:flex;gap:8px;margin-left:auto"><button class="ab-btn" id="tr-exp" type="button">Expandir tudo</button><button class="ab-btn" id="tr-col" type="button">Recolher tudo</button></span></div>
@@ -338,14 +324,6 @@ body{background:#eef2f8}
         <h3>Resumo por empresa</h3>
         <p class="ab-note">Clique no cabeçalho para ordenar. % finalizado = finalizados ÷ total.</p>
         <div class="ab-scroll" id="t-resumo" data-source="documentos"></div>
-      </div>
-      <div class="ab-card wide" id="card-docs">
-        <div class="ab-tools"><h3>Lista de documentos</h3><input class="ab-search" id="s-docs" type="search" placeholder="Buscar por número, título, segmento…" aria-label="Buscar documentos"><span class="ab-count" id="cnt-docs"></span></div>
-        <div class="ab-scroll" id="t-docs"></div>
-      </div>
-      <div class="ab-card wide" id="card-nap">
-        <div class="ab-tools"><h3>Documentos com NAP associada</h3><span class="ab-count" id="cnt-nap"></span></div>
-        <div class="ab-scroll short" id="t-nap" data-source="documentos"></div>
       </div>
     </div>
   </section>
@@ -843,7 +821,6 @@ body{background:#eef2f8}
     if (!list.length) box.replaceChildren(el('div', 'ab-empty', 'Nenhum documento com os filtros atuais.'));
     else box.replaceChildren(t);
   }
-  $('s-docs').addEventListener('input', () => { const b = $('t-docs'); if (b._t) renderT(b); });
   const chip = (txt, color) => { const s = el('span', 'ab-chip'); const i = el('i'); i.style.background = color || 'var(--muted-bar)'; s.append(i, document.createTextNode(txt)); return s; };
   const setText = (id, v) => { $(id).textContent = v; };
 
@@ -935,23 +912,7 @@ body{background:#eef2f8}
       }
 
       if (tab === 'contratadas') {
-        // donut atrasados
-        const atrR = F.filter((r) => r.sdoc === 'Atrasado');
-        const byDet = d3.rollups(atrR, (v) => v.length, (r) => r.sdet).sort((a, b) => b[1] - a[1]);
-        const box = $('c-atr'); box.classList.remove('dash-skeleton');
-        const S = 220, svg = svgFor(box, S, S); svg.style('max-width', '240px').style('margin', '0 auto').style('display', 'block');
-        const g = svg.append('g').attr('transform', `translate(${S / 2},${S / 2})`);
-        const arcs = d3.pie().sort(null).value((d) => d[1])(byDet);
-        g.selectAll('path').data(arcs).join('path').attr('d', d3.arc().innerRadius(66).outerRadius(104).padAngle(0.012).cornerRadius(2)).style('fill', (d) => SDET_C[d.data[0]] || C[7])
-          .on('pointermove', (ev, d) => showTip(ev, d.data[0], [['Documentos', fmt(d.data[1])], ['Parcela', pct(d.data[1] / atrR.length)]])).on('pointerleave', hideTip);
-        g.append('text').attr('text-anchor', 'middle').attr('dy', '-.05em').style('font-family', 'var(--f-display)').style('font-size', '42px').style('fill', 'var(--ink)').text(fmt(atrR.length));
-        g.append('text').attr('class', 'ab-tick').attr('text-anchor', 'middle').attr('dy', '1.5em').text('atrasados');
-        const l = $('l-atr'); l.replaceChildren(...byDet.map(([k, v]) => { const s = el('span'); const i = el('i'); i.style.background = SDET_C[k] || C[7]; s.append(i, document.createTextNode(`${k} · ${fmt(v)} (${pct(v / atrR.length)})`)); return s; }));
-
         // trâmite
-        const TR = F.filter((r) => TRAM_TAB.has(r.sdet)).map((r) => { const d = r.cdoc ? daysSince(r.cdoc) : null; return Object.assign({}, r, { dias: d, cat: d == null ? null : tempoCat(d) }); });
-        legend($('l-tempo'), TEMPO, (k) => TEMPO_C[k]);
-        hbars($('c-tempo'), groupStatus(TR.filter((r) => r.cat), 'emp', TEMPO, 'cat', { blank: '(sem empresa)', top: 15 }), TEMPO, (k) => TEMPO_C[k]);
         setText('cnt-tram', `${fmt(F.length)} documentos`);
         tree($('t-tram'), F);
 
@@ -969,17 +930,6 @@ body{background:#eef2f8}
           { k: 'atr', label: 'Atrasados', num: true, fmt }, { k: 'rep', label: 'Reprovações', num: true, fmt }
         ], em, { sort: 'total', dir: -1, total: { emp: 'Total', total, fin, p: total ? fin / total : null, tram, pend, atr, rep: d3.sum(F, (r) => r.nrep) } });
 
-        table($('t-docs'), [
-          { k: 'emp', label: 'Empresa', field: 'Empresa Responsável' }, { k: 'pac', label: 'Pacote', field: 'Pacote' }, { k: 'seg', label: 'Segmento', field: 'Segmento' },
-          { k: 'vale', label: 'Nº Vale', field: 'Número Vale' }, { k: 'tit', label: 'Título', field: 'Título', cls: 'tit' },
-          { k: 'sdet', label: 'Status do As Built', field: 'Status Detalhado', render: (r) => chip(r.sdet, SDET_C[r.sdet]) },
-          { k: 'sdoc', label: 'Status documento', field: 'Status Documento', render: (r) => chip(r.sdoc, SDOC_C[r.sdoc]) },
-          { k: 'nrep', label: 'Reprovações', field: 'Nº Reprovações', num: true, fmt }
-        ], F, { rowKey: 'ID', source: 'documentos', search: 's-docs', count: 'cnt-docs', limit: 600, text: (r) => [r.vale, r.tit, r.seg, r.emp, r.pac, r.sdet].join(' ') });
-
-        const NAP = F.filter((r) => r.nap);
-        setText('cnt-nap', `${fmt(NAP.length)} documentos`);
-        table($('t-nap'), [{ k: 'emp', label: 'Empresa' }, { k: 'pac', label: 'Pacote' }, { k: 'seg', label: 'Segmento' }, { k: 'vale', label: 'Nº Vale' }, { k: 'nap', label: 'NAP associada' }, { k: 'sdet', label: 'Status', render: (r) => chip(r.sdet, SDET_C[r.sdet]) }], NAP, { sort: 'emp', dir: 1 });
       }
 
       if (tab === 'curva') {
