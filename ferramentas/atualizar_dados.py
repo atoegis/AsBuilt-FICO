@@ -99,7 +99,8 @@ def converter(linhas, eh_bd, ordem, oae_seg):
     for r in linhas:
         g = lambda k: r.get(k)
         nec = txt(g('Necessário Emissão de As Built?')).upper()
-        if eh_bd and nec in ('OBRIGATÓRIO', 'OBRIGATORIO'): nec = 'SIM'  # obrigatório conta como SIM na BD
+        obrig = 'SIM' if nec in ('OBRIGATÓRIO', 'OBRIGATORIO') else 'NÃO'
+        if eh_bd and obrig == 'SIM': nec = 'SIM'  # obrigatório conta como SIM na BD
         if eh_bd and nec not in ('SIM', 'AVALIAR'): continue
         if not eh_bd and nec == 'AVALIAR': continue  # obrigatórios: AVALIAR fica fora do painel
         sd = txt(g('Status do As Built Detalhado')); sd = CANON.get(sd.lower(), sd)
@@ -112,7 +113,7 @@ def converter(linhas, eh_bd, ordem, oae_seg):
         try: repr_ = str(int(float(g('Número de Reprovações'))))
         except (TypeError, ValueError): repr_ = '0'
         o = {'ID': 0, 'Número Vale': txt(g('Número Vale')), 'Título': txt(g('Título'))}
-        if eh_bd: o['Necessário Emissão'] = nec
+        if eh_bd: o['Necessário Emissão'] = nec; o['Obrigatório'] = obrig
         o.update({'Disciplina': disc, 'Especialidade': txt(g('Especialidade de Engenharia')), 'Lote': lote_de(pacote_de(txt(g('Pacote')).upper()), txt(g('Lote')).upper()),
                   'Pacote': pacote_de(txt(g('Pacote')).upper()), 'Segmento': seg, 'Ativo': ativo,
                   'Empresa Responsável': txt(g('Empresa Responsável Pelo As Built')), 'Empresa Colaboradora': txt(g('Empresa Colaboradora')),

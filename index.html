@@ -251,6 +251,7 @@ body{background:#eef2f8}
     <label>Especialidade<select id="f-esp" data-p="esp" data-k="esp"></select></label>
     <label>Status documento<select id="f-sdoc" data-p="sdoc" data-k="sdoc"></select></label>
     <label>Status do As Built<select id="f-sdet" data-p="sdet" data-k="sdet"></select></label>
+    <label>Obrigatório<select id="f-obr" data-p="obr" data-k="obr"></select></label>
     <label>Pendência na implantação<select id="f-pend" data-p="pend" data-k="pend"></select></label>
     <label class="ab-refwrap">Mês de referência<select id="f-ref"></select></label>
     <button class="ab-btn" id="ab-reset" type="button">Limpar filtros</button>
@@ -509,7 +510,7 @@ body{background:#eef2f8}
         nap: r['NAP Associada'] || '', prev: r['Data Prevista'] || null, reprog: r['Data Reprogramada'] || null,
         cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || null, concl: r['Data Conclusão'] || null,
         nrep: +r['Nº Reprovações'] || 0, pend: r['Pendência Implantação'] || '', sdoc: r['Status Documento'] || '', sdet: r['Status Detalhado'] || '',
-        temi: r['Tipo de Emissão'] || '', acdoc: (r['Aprovado CDOC'] || '').replace(/^NAO$/, 'NÃO')
+        temi: r['Tipo de Emissão'] || '', obr: r['Obrigatório'] || '', acdoc: (r['Aprovado CDOC'] || '').replace(/^NAO$/, 'NÃO')
       };
       o.segs = (r['Segmentos (mapa)'] || '').split('|').filter(Boolean); o.oaes = (r['OAE (mapa)'] || '').split('|').filter(Boolean);
       o.real = REAL.has(o.sdet); o.andam = ANDAM.has(o.sdet); o.recus = RECUS.has(o.sdet);
@@ -525,7 +526,7 @@ body{background:#eef2f8}
   const P = () => dash.params();
   const selBD = [...document.querySelectorAll('#ab-filters-bd select[data-p]')];
   // aba Contratadas: só Empresa, Lote, Pacote, Segmento e Status do As Built
-  const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'sdet']);
+  const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'sdet', 'obr']);
   const selsBD = () => (tab === 'contratadas' ? selBD.filter((x) => CT_F.has(x.dataset.p)) : selBD);
   const selOB = [...document.querySelectorAll('#ab-filters-ob select[data-p]')];
   [...selBD, ...selOB].forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.p]: s.value || null })));

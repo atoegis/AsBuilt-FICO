@@ -116,7 +116,8 @@
     const out = []; let id = 0;
     for (const r of rows) {
       let nec = txt(r['Necessário Emissão de As Built?']).toUpperCase();
-      if (ehBD && (nec === 'OBRIGATÓRIO' || nec === 'OBRIGATORIO')) nec = 'SIM'; // obrigatório conta como SIM na BD
+      const obrig = nec === 'OBRIGATÓRIO' || nec === 'OBRIGATORIO' ? 'SIM' : 'NÃO';
+      if (ehBD && obrig === 'SIM') nec = 'SIM'; // obrigatório conta como SIM na BD
       if (ehBD && nec !== 'SIM' && nec !== 'AVALIAR') continue;
       if (!ehBD && nec === 'AVALIAR') continue; // obrigatórios: AVALIAR fica fora do painel
       let sd = txt(r['Status do As Built Detalhado']); sd = CANON[sd.toLowerCase()] || sd;
@@ -125,7 +126,7 @@
       const seg = txt(r['Segmento']), ativo = txt(r['Ativo']).toUpperCase();
       const mp = mapear(ativo, seg, ref.ordem, ref.oaeSeg);
       const o = { 'ID': ++id, 'Número Vale': txt(r['Número Vale']), 'Título': txt(r['Título']) };
-      if (ehBD) o['Necessário Emissão'] = nec;
+      if (ehBD) { o['Necessário Emissão'] = nec; o['Obrigatório'] = obrig; }
       Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': loteDe(pacoteDe(txt(r['Pacote']).toUpperCase()), txt(r['Lote']).toUpperCase()), 'Pacote': pacoteDe(txt(r['Pacote']).toUpperCase()), 'Segmento': seg, 'Ativo': ativo,
         'Empresa Responsável': txt(r['Empresa Responsável Pelo As Built']), 'Empresa Colaboradora': txt(r['Empresa Colaboradora']), 'NAP Associada': txt(r['NAP Associada']),
         'Data Prevista': dataDe(r['Data Prevista']), 'Data Reprogramada': dataDe(r['Data Reprogramada']), 'Data Ação CDOC': dataDe(r['Data da Ação do CDOC']), 'Data Tendência': dataDe(r['Data Tendência']), 'Data Conclusão': dataDe(r['Data Conclusão']),

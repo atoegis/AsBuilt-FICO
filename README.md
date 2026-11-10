@@ -36,7 +36,7 @@ Sem login (ou sem `config.js` preenchido), o painel usa a cópia salva em `dados
 
 ## Regras que o painel aplica na planilha
 - Usa as tabelas `PBI` e `PBI_9`. Não renomeie as tabelas nem os cabeçalhos das colunas.
-- Na BD ASBUILT, "Necessário Emissão de As Built?" = OBRIGATÓRIO conta como SIM.
+- Na BD ASBUILT, "Necessário Emissão de As Built?" = OBRIGATÓRIO conta como SIM. A coluna "Obrigatório" (SIM/NÃO) dos dados guarda essa marcação e alimenta o filtro "Obrigatório".
 - Nos Documentos Obrigatórios, linhas com "Necessário Emissão de As Built?" = AVALIAR ficam fora do painel.
 - PACOTE 1A e 1B são tratados como PACOTE 1 (também no diagrama linear).
 - Lote definido pelo Pacote: LOTE 01 = PCT 1, 2 e 3; LOTE 02 = PCT 4, 5, 6, 7 e 8; LOTE 03 = PCT 9, 10 e 11.
