@@ -129,7 +129,7 @@
       Object.assign(o, { 'Disciplina': disc, 'Especialidade': txt(r['Especialidade de Engenharia']), 'Lote': loteDe(pacoteDe(txt(r['Pacote']).toUpperCase()), txt(r['Lote']).toUpperCase()), 'Pacote': pacoteDe(txt(r['Pacote']).toUpperCase()), 'Segmento': seg, 'Ativo': ativo,
         'Empresa Responsável': txt(r['Empresa Responsável Pelo As Built']), 'Empresa Colaboradora': txt(r['Empresa Colaboradora']), 'NAP Associada': txt(r['NAP Associada']),
         'Data Prevista': dataDe(r['Data Prevista']), 'Data Reprogramada': dataDe(r['Data Reprogramada']), 'Data Ação CDOC': dataDe(r['Data da Ação do CDOC']), 'Data Tendência': dataDe(r['Data Tendência']), 'Data Conclusão': dataDe(r['Data Conclusão']),
-        'Nº Reprovações': String(parseInt(r['Número de Reprovações'], 10) || 0), 'Pendência Implantação': pend, 'Status Documento': txt(r['Status Documento']), 'Status Detalhado': sd,
+        'Nº Reprovações': String(parseInt(r['Número de Reprovações'], 10) || 0), 'Pendência Implantação': pend, 'Status Documento': txt(r['Status Documento']), 'Status Detalhado': sd, 'Tipo de Emissão': txt(r['Tipo de Emissão']).toUpperCase(), 'Aprovado CDOC': txt(r['Aprovado pelo CEDOC?'] ?? r['Aprovado pelo CDOC?']).toUpperCase(),
         'Segmentos (mapa)': mp.segs, 'OAE (mapa)': mp.oaes });
       if (!o['Número Vale'] && !o['Título']) continue;
       out.push(o);

@@ -120,7 +120,9 @@ def converter(linhas, eh_bd, ordem, oae_seg):
                   'Data Reprogramada': data_de(g('Data Reprogramada')), 'Data Ação CDOC': data_de(g('Data da Ação do CDOC')),
                   'Data Tendência': data_de(g('Data Tendência')), 'Data Conclusão': data_de(g('Data Conclusão')),
                   'Nº Reprovações': repr_, 'Pendência Implantação': pend, 'Status Documento': txt(g('Status Documento')),
-                  'Status Detalhado': sd, 'Segmentos (mapa)': segs, 'OAE (mapa)': oaes})
+                  'Status Detalhado': sd, 'Tipo de Emissão': txt(g('Tipo de Emissão')).upper(),
+                  'Aprovado CDOC': txt(g('Aprovado pelo CEDOC?') if g('Aprovado pelo CEDOC?') is not None else g('Aprovado pelo CDOC?')).upper(),
+                  'Segmentos (mapa)': segs, 'OAE (mapa)': oaes})
         if not o['Número Vale'] and not o['Título']: continue
         out.append(o)
     for i, o in enumerate(out, 1): o['ID'] = i

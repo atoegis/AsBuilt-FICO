@@ -110,6 +110,18 @@ body{background:#eef2f8}
 .ab-gauge .gs{font-size:11.5px;color:var(--ink-soft);text-align:center}
 .ab-scroll{max-height:26rem;overflow:auto;border-top:1px solid var(--line)}
 .ab-scroll.short{max-height:20rem}
+.ab-tree td{padding:5px 10px}
+.ab-tree tr.lv0 td{font-weight:700;background:color-mix(in srgb,var(--blue) 7%,var(--paper))}
+.ab-tree tr.lv1 td{font-weight:700}
+.ab-tree tr.lv0,.ab-tree tr.lv1{cursor:pointer}
+.ab-tree .tg{display:inline-flex;align-items:center;gap:.45rem;white-space:nowrap}
+.ab-tree .tg b{display:inline-grid;place-items:center;width:1rem;height:1rem;border:1px solid var(--line);border-radius:3px;font-size:11px;line-height:1;color:var(--ink-soft);background:var(--paper)}
+.ab-tree tr.lv1 .tg{padding-left:1.5rem}
+.ab-tree tr.lv2 td:first-child{padding-left:4.2rem}
+.ab-tree tr.lv2 .vl{font-weight:700}
+.ab-tree tr.lv2 .tt{color:var(--ink-mid);font-size:12px;max-width:44rem;white-space:normal;margin-top:2px}
+.ab-tree td.c{text-align:center}
+.ab-tree th.num{width:5.5rem}.ab-tree th.c{width:10rem}.ab-tree td.num{padding-right:18px}
 .ab-scroll.flat{max-height:none;border-top:0}
 .ab-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .ab-table th{position:sticky;top:0;background:var(--paper);text-align:left;padding:0;border-bottom:2px solid var(--line);white-space:nowrap;z-index:1}
@@ -311,9 +323,10 @@ body{background:#eef2f8}
         <div class="ab-chart dash-skeleton" id="c-tempo" data-source="documentos"></div>
       </div>
       <div class="ab-card wide accent" id="card-tram">
-        <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span></div>
-        <p class="ab-note">Farol: verde até 2 dias, amarelo de 3 a 5, vermelho acima de 5.</p>
-        <div class="ab-scroll short" id="t-tram" data-source="documentos"></div>
+        <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span>
+          <span style="display:flex;gap:8px;margin-left:auto"><button class="ab-btn" id="tr-exp" type="button">Expandir tudo</button><button class="ab-btn" id="tr-col" type="button">Recolher tudo</button></span></div>
+        <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba. Clique numa linha para abrir ou fechar.</p>
+        <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
       </div>
       <div class="ab-card wide" id="card-emp">
         <h3>Status por empresa</h3>
@@ -495,7 +508,8 @@ body{background:#eef2f8}
         seg: r['Segmento'] || '', ativo: r['Ativo'] || '', emp: r['Empresa Responsável'] || '', colab: r['Empresa Colaboradora'] || '',
         nap: r['NAP Associada'] || '', prev: r['Data Prevista'] || null, reprog: r['Data Reprogramada'] || null,
         cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || null, concl: r['Data Conclusão'] || null,
-        nrep: +r['Nº Reprovações'] || 0, pend: r['Pendência Implantação'] || '', sdoc: r['Status Documento'] || '', sdet: r['Status Detalhado'] || ''
+        nrep: +r['Nº Reprovações'] || 0, pend: r['Pendência Implantação'] || '', sdoc: r['Status Documento'] || '', sdet: r['Status Detalhado'] || '',
+        temi: r['Tipo de Emissão'] || '', acdoc: (r['Aprovado CDOC'] || '').replace(/^NAO$/, 'NÃO')
       };
       o.segs = (r['Segmentos (mapa)'] || '').split('|').filter(Boolean); o.oaes = (r['OAE (mapa)'] || '').split('|').filter(Boolean);
       o.real = REAL.has(o.sdet); o.andam = ANDAM.has(o.sdet); o.recus = RECUS.has(o.sdet);
@@ -510,6 +524,9 @@ body{background:#eef2f8}
   // ---------- filtros ----------
   const P = () => dash.params();
   const selBD = [...document.querySelectorAll('#ab-filters-bd select[data-p]')];
+  // aba Contratadas: só Empresa, Lote, Pacote, Segmento e Status do As Built
+  const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'sdet']);
+  const selsBD = () => (tab === 'contratadas' ? selBD.filter((x) => CT_F.has(x.dataset.p)) : selBD);
   const selOB = [...document.querySelectorAll('#ab-filters-ob select[data-p]')];
   [...selBD, ...selOB].forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.p]: s.value || null })));
   const refSel = [$('f-ref'), $('f-ref-ob')];
@@ -735,6 +752,46 @@ body{background:#eef2f8}
     }
   }
 
+  // tabela hierárquica: empresa → status do As Built → documento
+  const treeOpen = new Set();
+  function tree(box, rows) {
+    box._rows = rows;
+    const byE = d3.groups(rows, (r) => r.emp || '(sem empresa)').sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'pt-BR'));
+    const uni = (v, k) => { const u = new Set(v.map((r) => r[k] || '')); return u.size === 1 ? [...u][0] || '--' : ''; };
+    const t = el('table', 'ab-table ab-tree');
+    const hr = el('tr');
+    for (const [lab, cls] of [['Empresa', ''], ['Qtd', 'num'], ['Tipo de emissão', 'c'], ['Aprovado CDOC?', 'c']]) { const th = el('th', cls); const d = el('span', 'ab-th', lab); d.style.cursor = 'default'; d.style.display = 'block'; d.style.boxSizing = 'border-box'; if (cls) d.style.textAlign = cls === 'num' ? 'right' : 'center'; th.append(d); hr.append(th); }
+    t.append(el('thead')); t.tHead.append(hr);
+    const tb = el('tbody');
+    const grp = (lv, key, label, v, color) => {
+      const tr = el('tr', 'lv' + lv), td = el('td'), g = el('span', 'tg'), aberto = treeOpen.has(key);
+      g.append(el('b', null, aberto ? '−' : '+'));
+      if (color) { const c = chip(label, color); g.append(c); } else g.append(document.createTextNode(label));
+      td.append(g); tr.append(td, el('td', 'num', fmt(v.length)), el('td', 'c', uni(v, 'temi')), el('td', 'c', uni(v, 'acdoc')));
+      tr.setAttribute('aria-expanded', String(aberto));
+      tr.addEventListener('click', () => { if (treeOpen.has(key)) treeOpen.delete(key); else treeOpen.add(key); tree(box, box._rows); });
+      tb.append(tr); return aberto;
+    };
+    for (const [e, ve] of byE) {
+      if (!grp(0, e, e, ve)) continue;
+      const byS = d3.groups(ve, (r) => r.sdet || '(sem status)').sort((a, b) => b[1].length - a[1].length);
+      for (const [st, vs] of byS) {
+        if (!grp(1, e + '|' + st, st, vs, SDET_C[st] || C[7])) continue;
+        for (const r of [...vs].sort((a, b) => a.vale.localeCompare(b.vale, 'pt-BR', { numeric: true }))) {
+          const tr = el('tr', 'lv2'), td = el('td');
+          td.append(el('div', 'vl', r.vale || '(sem número)'), el('div', 'tt', r.tit));
+          tr.append(td, el('td', 'num', '1'), el('td', 'c', r.temi || '--'), el('td', 'c', r.acdoc || '--'));
+          tb.append(tr);
+        }
+      }
+    }
+    t.append(tb);
+    if (!rows.length) box.replaceChildren(el('div', 'ab-empty', 'Nenhum documento com os filtros atuais.'));
+    else box.replaceChildren(t);
+  }
+  $('tr-exp').addEventListener('click', () => { const b = $('t-tram'); for (const r of b._rows || []) { treeOpen.add(r.emp || '(sem empresa)'); treeOpen.add((r.emp || '(sem empresa)') + '|' + (r.sdet || '(sem status)')); } tree(b, b._rows || []); });
+  $('tr-col').addEventListener('click', () => { treeOpen.clear(); const b = $('t-tram'); tree(b, b._rows || []); });
+
   // tabela ordenável
   function table(box, cols, rows, o = {}) {
     box._t = { cols, rows, o, sort: box._t?.sort ?? o.sort ?? null, dir: box._t?.dir ?? o.dir ?? -1 };
@@ -829,6 +886,7 @@ body{background:#eef2f8}
     const ob = t === 'obrigatorios';
     $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa';
     document.querySelector('.ab-refwrap').hidden = t !== 'curva';
+    selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' && !CT_F.has(x.dataset.p); });
     document.querySelector('.ab-refwrap-ob').hidden = !ob;
     if (link) dash.setLink(t);
     draw();
@@ -851,7 +909,7 @@ body{background:#eef2f8}
       const all = prep(D.data, false);
       const sim = all.filter((r) => r.nec === 'SIM'), aval = all.filter((r) => r.nec === 'AVALIAR');
       selBD.forEach((s) => fillSelect(s, sim, 'Todos'));
-      const F = applyF(sim, selBD), A = applyF(aval, selBD);
+      const F = applyF(sim, selsBD()), A = applyF(aval, selsBD());
       const total = F.filter((r) => r.res).length;
       const fin = F.filter((r) => r.res === 'Finalizado').length, tram = F.filter((r) => r.res === 'Em trâmite').length, pend = F.filter((r) => r.res === 'Pendente').length;
       const atr = F.filter((r) => r.sdoc === 'Atrasado').length;
@@ -893,12 +951,8 @@ body{background:#eef2f8}
         const TR = F.filter((r) => TRAM_TAB.has(r.sdet)).map((r) => { const d = r.cdoc ? daysSince(r.cdoc) : null; return Object.assign({}, r, { dias: d, cat: d == null ? null : tempoCat(d) }); });
         legend($('l-tempo'), TEMPO, (k) => TEMPO_C[k]);
         hbars($('c-tempo'), groupStatus(TR.filter((r) => r.cat), 'emp', TEMPO, 'cat', { blank: '(sem empresa)', top: 15 }), TEMPO, (k) => TEMPO_C[k]);
-        setText('cnt-tram', `${fmt(TR.length)} documentos`);
-        table($('t-tram'), [
-          { k: 'emp', label: 'Empresa' }, { k: 'pac', label: 'Pacote' }, { k: 'vale', label: 'Nº Vale' }, { k: 'colab', label: 'Colaboradora' },
-          { k: 'sdet', label: 'Status', render: (r) => chip(r.sdet, SDET_C[r.sdet]) },
-          { k: 'dias', label: 'Dias em trâmite', num: true, render: (r) => chip(r.dias == null ? '—' : fmt(r.dias), r.dias == null ? null : farolC(r.dias)) }
-        ], TR, { sort: 'dias', dir: -1 });
+        setText('cnt-tram', `${fmt(F.length)} documentos`);
+        tree($('t-tram'), F);
 
         legend($('l-sdoc3'), SDOC, (k) => SDOC_C[k]);
         hbars($('c-emp'), groupStatus(F, 'emp', SDOC, 'sdoc', { blank: '(sem empresa)', top: 20 }), SDOC, (k) => SDOC_C[k]);
