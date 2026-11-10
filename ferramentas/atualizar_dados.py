@@ -19,7 +19,7 @@ CANON = {s.lower(): s for s in ['AS Built Finalizado', 'Aprovado Pela Vale', 'Ag
 ATIVO = {  # nomes novos da planilha (nov/2026)
          'PONTE CORREGO BALDAIA': [9], 'PONTE CORREGO PEITO DE MOÇA': [29], 'PONTE CRIXÁS AÇU': [8], 'PONTE RIBEIRÃO DO MEIO': [5], 'PONTE RIO DO PEIXE I': [6], 'PONTE RIO DOS BOIS': [2], 'PONTE RIO PRETO': [18], 'PI GO-154': [7], 'PI GO-164': [17], 'PI GO-347': [1], 'PI GO-556': [3], 'PI MT-100': [21], 'PI MT-326': [28],
          # nomes anteriores, mantidos para versões antigas da planilha
-         'CORIXO MOLHA MALA': [24], 'CORREGO PEITO DE MOÇA': [29], 'GO-156': [11], 'MT-326': [28], 'RIO ARAGUAIA': [20], 'RIO SANTA MARIA': [14], 'RIO DO PEIXE III': [19], 'CORREGO BARREIRO': [15], 'GO-336': [13], 'MT-100': [21], 'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29],
+         'CORIXO MOLHA MALA': [24], 'CORREGO PEITO DE MOÇA': [29], 'GO-156': [11], 'MT-326': [28], 'RIO CRISTALINO': [23], 'CORIXO DA SAUDADE': [22], 'RIO ARAGUAIA': [20], 'RIO SANTA MARIA': [14], 'RIO DO PEIXE III': [19], 'CORREGO BARREIRO': [15], 'GO-336': [13], 'MT-100': [21], 'CORREGO BALDAIA': [9], 'CRIXÁS AÇU': [8], 'GO-154': [7], 'GO-347': [1], 'GO-556': [3], 'PF SOBRE O CORREGO PEITO DE MOÇA': [29],
          'PI GO-156': [11], 'TRAVESSIA GO-156': [11], 'PI GO-336': [13], 'TRAVESSIA GO-336': [13], 'PI SOB A MT-326': [28], 'TRAVESSIA GO-164': [17],
          'TRAVESSIA MT-100': [21], 'PONTE CORIXO DA SAUDADE': [22], 'PONTE CORIXO MOLHA MALA': [24], 'PONTE CÓRREGO BARREIRO': [15],
          'PONTE SOBRE CORREGO BARREIRO': [15], "PONTE RIBEIRÃO D'ANTA": [12], "RIBEIRÃO D'ANTA": [12], 'RIBEIRAO DANTA': [12], 'RIBEIRÃO DANTA': [12],
