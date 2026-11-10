@@ -279,6 +279,7 @@ body{background:#eef2f8}
     <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Pendente</span><span class="v" id="k-pend">—</span><span class="n" id="k-pend-p">—</span></div>
     <div class="ab-kpi" style="--kc:var(--ink-soft)"><span class="k">A avaliar</span><span class="v" id="k-aval">—</span><span class="n">ainda sem definição de As Built</span></div>
   </div>
+  <div class="ab-kpis" id="ct-kpis" data-source="documentos" hidden></div>
 
   <!-- VISÃO GERAL -->
   <section id="visao" class="ab-page" role="tabpanel" aria-labelledby="tab-visao">
@@ -533,6 +534,8 @@ body{background:#eef2f8}
     sel.value = cur;
     sel.classList.toggle('on', !!cur);
   }
+  // filtros em cascata: cada lista só mostra valores que existem com os demais filtros aplicados
+  const fillCascade = (all, act, rows) => all.forEach((s) => fillSelect(s, applyF(rows, act.filter((x) => x !== s)), 'Todos'));
   const applyF = (rows, sels) => {
     const p = P();
     const act = sels.map((s) => [s.dataset.k, p[s.dataset.p]]).filter((x) => x[1]);
@@ -869,7 +872,7 @@ body{background:#eef2f8}
     tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
     document.querySelectorAll('.ab-page').forEach((s) => { s.hidden = s.id !== t; });
     const ob = t === 'obrigatorios';
-    $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa';
+    $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa' || t === 'contratadas'; $('ct-kpis').hidden = t !== 'contratadas';
     document.querySelector('.ab-refwrap').hidden = t !== 'curva';
     selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' && !CT_F.has(x.dataset.p); });
     document.querySelector('.ab-refwrap-ob').hidden = !ob;
@@ -893,7 +896,7 @@ body{background:#eef2f8}
       }
       const all = prep(D.data, false);
       const sim = all.filter((r) => r.nec === 'SIM'), aval = all.filter((r) => r.nec === 'AVALIAR');
-      selBD.forEach((s) => fillSelect(s, sim, 'Todos'));
+      fillCascade(selBD, selsBD(), sim);
       const F = applyF(sim, selsBD()), A = applyF(aval, selsBD());
       const total = F.filter((r) => r.res).length;
       const fin = F.filter((r) => r.res === 'Finalizado').length, tram = F.filter((r) => r.res === 'Em trâmite').length, pend = F.filter((r) => r.res === 'Pendente').length;
@@ -919,6 +922,16 @@ body{background:#eef2f8}
       }
 
       if (tab === 'contratadas') {
+        // uma caixa por Status do As Built (ordem fixa; só os status que existem na base)
+        const ordemS = Object.keys(SDET_C);
+        const sts = [...new Set(sim.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemS.indexOf(a) + 1) || 99) - ((ordemS.indexOf(b) + 1) || 99) || a.localeCompare(b, 'pt-BR'));
+        $('ct-kpis').replaceChildren(...sts.map((st) => {
+          const n = F.filter((r) => (r.sdet || '(sem status)') === st).length;
+          const k = el('div', 'ab-kpi'); k.style.setProperty('--kc', SDET_C[st] || 'var(--ink-soft)');
+          k.append(el('span', 'k', st), el('span', 'v', fmt(n)), el('span', 'n', F.length ? pct(n / F.length) + ' do total' : '—'));
+          return k;
+        }));
+
         // trâmite
         setText('cnt-tram', `${fmt(F.length)} documentos`);
         tree($('t-tram'), F);
@@ -981,7 +994,7 @@ body{background:#eef2f8}
       return;
     }
     const allO = prep(O.data, true);
-    selOB.forEach((s) => fillSelect(s, allO, 'Todos'));
+    fillCascade(selOB, selOB, allO);
     const F = applyF(allO, selOB);
     const n = F.length, real = F.filter((r) => r.real).length, and = F.filter((r) => r.andam).length, ne = F.filter((r) => r.sdet === 'Não Emitido').length;
     const plan = F.filter((r) => leM(r.prev, ref)).length, apr = F.filter((r) => r.real && leM(r.tend, ref)).length;
@@ -1108,7 +1121,7 @@ body{background:#eef2f8}
     let rows = prep(D.data, isOb);
     if (!isOb) rows = rows.filter((r) => r.nec === 'SIM');
     const sels = isOb ? selOB : selBD;
-    sels.forEach((s) => fillSelect(s, rows, 'Todos'));
+    fillCascade(sels, sels, rows);
     const F = applyF(rows, sels);
     const S = segStats(F, G);
     const sc = metricScale(met, S.st);
