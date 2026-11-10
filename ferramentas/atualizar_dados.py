@@ -99,6 +99,7 @@ def converter(linhas, eh_bd, ordem, oae_seg):
     for r in linhas:
         g = lambda k: r.get(k)
         nec = txt(g('Necessário Emissão de As Built?')).upper()
+        if eh_bd and nec in ('OBRIGATÓRIO', 'OBRIGATORIO'): nec = 'SIM'  # obrigatório conta como SIM na BD
         if eh_bd and nec not in ('SIM', 'AVALIAR'): continue
         if not eh_bd and nec == 'AVALIAR': continue  # obrigatórios: AVALIAR fica fora do painel
         sd = txt(g('Status do As Built Detalhado')); sd = CANON.get(sd.lower(), sd)

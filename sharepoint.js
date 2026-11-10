@@ -115,7 +115,8 @@
   function converter(rows, ehBD, ref) {
     const out = []; let id = 0;
     for (const r of rows) {
-      const nec = txt(r['Necessário Emissão de As Built?']).toUpperCase();
+      let nec = txt(r['Necessário Emissão de As Built?']).toUpperCase();
+      if (ehBD && (nec === 'OBRIGATÓRIO' || nec === 'OBRIGATORIO')) nec = 'SIM'; // obrigatório conta como SIM na BD
       if (ehBD && nec !== 'SIM' && nec !== 'AVALIAR') continue;
       if (!ehBD && nec === 'AVALIAR') continue; // obrigatórios: AVALIAR fica fora do painel
       let sd = txt(r['Status do As Built Detalhado']); sd = CANON[sd.toLowerCase()] || sd;
