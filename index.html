@@ -99,7 +99,9 @@ body{background:#eef2f8}
 .ab-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
 .ab-grid>.ab-card{grid-column:span 6}
 #card-gauges{grid-column:span 4}#card-concl{grid-column:span 8}
-#card-ativo .ab-chart,#card-pac .ab-chart{max-height:30rem;overflow-y:auto;overflow-x:hidden}
+#card-ativo .ab-chart,#card-pac .ab-chart,#card-emp .ab-chart{max-height:30rem;overflow-y:auto;overflow-x:hidden}
+#card-resumo .ab-scroll{max-height:32rem}
+#card-resumo th .ab-th,#card-resumo td{padding-left:6px;padding-right:6px}#card-resumo td{font-size:12.5px}#card-resumo th .ab-th{font-size:10px;letter-spacing:.03em}
 #card-concl .ab-chart{flex:1}
 .ab-card{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:14px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
 .ab-card.wide,.ab-grid>.ab-card.wide{grid-column:1/-1}
@@ -339,14 +341,14 @@ body{background:#eef2f8}
         <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba. Clique numa linha para abrir ou fechar.</p>
         <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
       </div>
-      <div class="ab-card wide" id="card-emp">
+      <div class="ab-card" id="card-emp">
         <h3>Status do As Built por empresa</h3>
         <div class="ab-legend" id="l-sdoc3"></div>
         <div class="ab-chart dash-skeleton" id="c-emp" data-source="documentos"></div>
       </div>
-      <div class="ab-card wide" id="card-resumo">
+      <div class="ab-card" id="card-resumo">
         <h3>Resumo por empresa</h3>
-        <p class="ab-note">Clique no cabeçalho para ordenar. % finalizado = finalizados ÷ total.</p>
+        <p class="ab-note">Documentos por Status do As Built. Clique no cabeçalho para ordenar. % finalizado = AS Built Finalizado ÷ total.</p>
         <div class="ab-scroll" id="t-resumo" data-source="documentos"></div>
       </div>
     </div>
@@ -993,16 +995,21 @@ body{background:#eef2f8}
         legend($('l-sdoc3'), SDK, sdC);
         hbars($('c-emp'), groupStatus(F.map((r) => r.sdet ? r : Object.assign({}, r, { sdet: '(sem status)' })), 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 }), SDK, sdC);
 
-        // resumo por empresa
+        // resumo por empresa, pelo Status do As Built
+        const CURTO = { 'AS Built Finalizado': 'Finalizado', 'Aprovado Pela Vale': 'Aprov. Vale', 'Aguardando análise Vale': 'Aguard. Vale', 'Pendente análise CDOC': 'Pend. CDOC', 'Reprovado Pela Vale': 'Reprov. Vale', 'Reprovado pelo CDOC': 'Reprov. CDOC', 'Não Emitido': 'Não emitido' };
         const em = d3.rollups(F, (v) => {
-          const t = v.filter((r) => r.res).length, f = v.filter((r) => r.res === 'Finalizado').length;
-          return { emp: v[0].emp || '(sem empresa)', total: t, fin: f, p: t ? f / t : null, tram: v.filter((r) => r.res === 'Em trâmite').length, pend: v.filter((r) => r.res === 'Pendente').length, atr: v.filter((r) => r.sdoc === 'Atrasado').length, rep: d3.sum(v, (r) => r.nrep) };
+          const o = { emp: v[0].emp || '(sem empresa)', total: v.length };
+          SDK.forEach((st, i) => { o['s' + i] = v.filter((r) => (r.sdet || '(sem status)') === st).length; });
+          o.p = v.length ? v.filter((r) => r.sdet === 'AS Built Finalizado').length / v.length : null;
+          return o;
         }, (r) => r.emp).map((x) => x[1]);
+        const tot = { emp: 'Total', total: F.length, p: F.length ? F.filter((r) => r.sdet === 'AS Built Finalizado').length / F.length : null };
+        SDK.forEach((st, i) => { tot['s' + i] = F.filter((r) => (r.sdet || '(sem status)') === st).length; });
         table($('t-resumo'), [
-          { k: 'emp', label: 'Empresa' }, { k: 'total', label: 'Total', num: true, fmt }, { k: 'fin', label: 'Finalizados', num: true, fmt },
-          { k: 'p', label: '% finalizado', num: true, fmt: pct }, { k: 'tram', label: 'Em trâmite', num: true, fmt }, { k: 'pend', label: 'Pendentes', num: true, fmt },
-          { k: 'atr', label: 'Atrasados', num: true, fmt }, { k: 'rep', label: 'Reprovações', num: true, fmt }
-        ], em, { sort: 'total', dir: -1, total: { emp: 'Total', total, fin, p: total ? fin / total : null, tram, pend, atr, rep: d3.sum(F, (r) => r.nrep) } });
+          { k: 'emp', label: 'Empresa' }, { k: 'total', label: 'Total', num: true, fmt },
+          ...SDK.map((st, i) => ({ k: 's' + i, label: CURTO[st] || st, num: true, fmt })),
+          { k: 'p', label: '% finalizado', num: true, fmt: pct }
+        ], em, { sort: 'total', dir: -1, total: tot });
 
       }
 
