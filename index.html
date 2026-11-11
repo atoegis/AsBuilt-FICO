@@ -70,6 +70,22 @@ body{background:#eef2f8}
 .ab-filters label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);min-width:0}
 .ab-filters select{font:inherit;font-size:12.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;width:100%}
 .ab-filters select.on{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 10%,var(--paper))}
+.ab-ms{position:relative;min-width:0}
+.ab-ms>select{display:none}
+.ab-ms-btn{font:inherit;font-size:12.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 26px 6px 8px;width:100%;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
+.ab-ms-btn::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--ink-mid);border-bottom:1.5px solid var(--ink-mid);transform:translateY(-70%) rotate(45deg)}
+.ab-ms-btn.on{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 10%,var(--paper))}
+.ab-ms-btn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.ab-ms-pop{position:absolute;z-index:60;top:calc(100% + 4px);left:0;min-width:100%;width:max-content;max-width:min(24rem,90vw);background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(15,30,60,.18);padding:6px;text-transform:none;letter-spacing:0;font-weight:500}
+.ab-ms-pop[hidden]{display:none}
+.ab-ms-q{font:inherit;font-size:12.5px;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;padding:5px 8px;margin-bottom:4px;color:var(--ink);background:var(--paper)}
+.ab-ms-list{max-height:16rem;overflow:auto}
+.ab-ms-list label{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;font-size:12.5px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;color:var(--ink)!important;padding:4px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.ab-ms-list label:hover{background:color-mix(in srgb,var(--blue) 8%,var(--paper))}
+.ab-ms-list input{accent-color:var(--orange);margin:0}
+.ab-ms-foot{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+.ab-ms-foot button{font:inherit;font-size:12px;font-weight:600;border:0;background:none;color:var(--blue);cursor:pointer;padding:2px 4px}
+.ab-ms-vazio{font-size:12px;color:var(--ink-soft);padding:6px}
 .ab-btn{font:inherit;font-size:12.5px;font-weight:700;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:6px 14px;color:var(--blue);cursor:pointer;height:fit-content}
 .ab-btn:hover{border-color:var(--blue)}
 .ab-label{margin:6px 0 -6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);display:flex;align-items:center;gap:12px}
@@ -324,7 +340,7 @@ body{background:#eef2f8}
         <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
       </div>
       <div class="ab-card wide" id="card-emp">
-        <h3>Status por empresa</h3>
+        <h3>Status do As Built por empresa</h3>
         <div class="ab-legend" id="l-sdoc3"></div>
         <div class="ab-chart dash-skeleton" id="c-emp" data-source="documentos"></div>
       </div>
@@ -515,7 +531,37 @@ body{background:#eef2f8}
   const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'sdet', 'obr']);
   const selsBD = () => (tab === 'contratadas' ? selBD.filter((x) => CT_F.has(x.dataset.p)) : selBD);
   const selOB = [...document.querySelectorAll('#ab-filters-ob select[data-p]')];
-  [...selBD, ...selOB].forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.p]: s.value || null })));
+  // ---------- filtros de múltipla seleção ----------
+  const vals = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+  const setVals = (p, arr) => dash.setParams({ [p]: arr.length ? arr : null });
+  function msBuild(sel) {
+    const wrap = el('div', 'ab-ms'); sel.before(wrap); wrap.append(sel);
+    const btn = el('button', 'ab-ms-btn'); btn.type = 'button'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+    const pop = el('div', 'ab-ms-pop'); pop.hidden = true;
+    const q = el('input', 'ab-ms-q'); q.type = 'search'; q.placeholder = 'Buscar…'; q.setAttribute('aria-label', 'Buscar na lista');
+    const list = el('div', 'ab-ms-list'); list.setAttribute('role', 'listbox'); list.setAttribute('aria-multiselectable', 'true');
+    const foot = el('div', 'ab-ms-foot'), bAll = el('button', null, 'Selecionar visíveis'), bClr = el('button', null, 'Limpar');
+    bAll.type = bClr.type = 'button'; foot.append(bAll, bClr);
+    pop.append(q, list, foot); wrap.append(btn, pop);
+    const ms = sel._ms = { wrap, btn, pop, q, list, opts: [], all: 'Todos' };
+    const open = (v) => { pop.hidden = !v; btn.setAttribute('aria-expanded', String(v)); if (v) { document.querySelectorAll('.ab-ms-pop').forEach((o) => { if (o !== pop) { o.hidden = true; o.previousElementSibling.setAttribute('aria-expanded', 'false'); } }); q.value = ''; msList(sel); q.hidden = ms.opts.length < 8; if (!q.hidden) q.focus(); } };
+    btn.addEventListener('click', (e) => { e.stopPropagation(); open(pop.hidden); });
+    pop.addEventListener('click', (e) => e.stopPropagation());
+    q.addEventListener('input', () => msList(sel));
+    bClr.addEventListener('click', () => setVals(sel.dataset.p, []));
+    bAll.addEventListener('click', () => { const cur = vals(P()[sel.dataset.p]); const vis = ms.opts.filter((o) => o.toLowerCase().includes(q.value.trim().toLowerCase())); setVals(sel.dataset.p, [...new Set([...cur, ...vis])]); });
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { open(false); btn.focus(); } });
+  }
+  function msList(sel) {
+    const ms = sel._ms, cur = vals(P()[sel.dataset.p]), t = ms.q.value.trim().toLowerCase();
+    const show = ms.opts.filter((o) => !t || o.toLowerCase().includes(t));
+    ms.list.replaceChildren(...(show.length ? show.map((o) => {
+      const lb = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.checked = cur.includes(o);
+      cb.addEventListener('change', () => { const now = vals(P()[sel.dataset.p]); setVals(sel.dataset.p, cb.checked ? [...now, o] : now.filter((x) => x !== o)); });
+      lb.append(cb, document.createTextNode(o)); return lb;
+    }) : [el('div', 'ab-ms-vazio', 'Nada encontrado')]));
+  }
+  document.addEventListener('click', () => document.querySelectorAll('.ab-ms-pop').forEach((o) => { if (!o.hidden) { o.hidden = true; o.previousElementSibling.setAttribute('aria-expanded', 'false'); } }));
   const refSel = [$('f-ref'), $('f-ref-ob')];
   for (const s of refSel) {
     for (let i = AX0; i <= 2027 * 12 + 11; i++) s.append(new Option(mLab(i), mKey(i)));
@@ -527,19 +573,23 @@ body{background:#eef2f8}
 
   function fillSelect(sel, rows, all) {
     const k = sel.dataset.k;
-    const vals = [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
-    const cur = P()[sel.dataset.p] ?? '';
-    if (cur && !vals.includes(cur)) vals.unshift(cur);
-    sel.replaceChildren(new Option(all, ''), ...vals.map((v) => new Option(v, v)));
-    sel.value = cur;
-    sel.classList.toggle('on', !!cur);
+    const opts = [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    const cur = vals(P()[sel.dataset.p]);
+    for (const c of cur) if (!opts.includes(c)) opts.unshift(c);
+    const ms = sel._ms;
+    if (!ms) return;
+    ms.opts = opts; ms.all = all;
+    ms.btn.textContent = !cur.length ? all : cur.length === 1 ? cur[0] : `${cur.length} selecionados`;
+    ms.btn.title = cur.join(', ');
+    ms.btn.classList.toggle('on', cur.length > 0);
+    if (!ms.pop.hidden) msList(sel);
   }
   // filtros em cascata: cada lista só mostra valores que existem com os demais filtros aplicados
   const fillCascade = (all, act, rows) => all.forEach((s) => fillSelect(s, applyF(rows, act.filter((x) => x !== s)), 'Todos'));
   const applyF = (rows, sels) => {
     const p = P();
-    const act = sels.map((s) => [s.dataset.k, p[s.dataset.p]]).filter((x) => x[1]);
-    return act.length ? rows.filter((r) => act.every(([k, v]) => r[k] === v)) : rows;
+    const act = sels.map((s) => [s.dataset.k, vals(p[s.dataset.p])]).filter((x) => x[1].length);
+    return act.length ? rows.filter((r) => act.every(([k, v]) => v.includes(r[k]))) : rows;
   };
   const refIdx = () => mIdx((P().ref || mKey(TODAY_M)) + '-01');
 
@@ -568,6 +618,7 @@ body{background:#eef2f8}
 
   // ---------- componentes ----------
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  [...selBD, ...selOB].forEach(msBuild);
   function legend(box, keys, colorOf, cls) {
     box.replaceChildren(...keys.map((k) => { const s = el('span'); const i = el('i', cls ? cls(k) : ''); i.style.background = colorOf(k); if (cls && cls(k).includes('dash')) i.style.color = colorOf(k); s.append(i, document.createTextNode(k)); return s; }));
   }
@@ -936,8 +987,11 @@ body{background:#eef2f8}
         setText('cnt-tram', `${fmt(F.length)} documentos`);
         tree($('t-tram'), F);
 
-        legend($('l-sdoc3'), SDOC, (k) => SDOC_C[k]);
-        hbars($('c-emp'), groupStatus(F, 'emp', SDOC, 'sdoc', { blank: '(sem empresa)', top: 20 }), SDOC, (k) => SDOC_C[k]);
+        const ordemSD = Object.keys(SDET_C);
+        const SDK = [...new Set(F.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemSD.indexOf(a) + 1) || 99) - ((ordemSD.indexOf(b) + 1) || 99));
+        const sdC = (k) => SDET_C[k] || 'var(--ink-soft)';
+        legend($('l-sdoc3'), SDK, sdC);
+        hbars($('c-emp'), groupStatus(F.map((r) => r.sdet ? r : Object.assign({}, r, { sdet: '(sem status)' })), 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 }), SDK, sdC);
 
         // resumo por empresa
         const em = d3.rollups(F, (v) => {
@@ -1162,8 +1216,8 @@ body{background:#eef2f8}
     const key = el('div', 'key'); const k1 = el('span'); k1.append(el('i'), document.createTextNode('OAE')); const k2 = el('span'); k2.append(el('i', 'nd'), document.createTextNode('sem docs')); key.append(k1, k2); ramp.append(key);
 
     // zoom no filtro ativo: enquadra os segmentos que ficaram com documentos
-    M.fk = base + '|' + sels.map((x) => x.value).join('|');
-    M.foco = sels.some((x) => x.value) ? G.S.filter((s) => S.st.get(s.code).total && lnOf(G, s)).flatMap((s) => segCo(G, s)) : null;
+    M.fk = base + '|' + sels.map((x) => vals(P()[x.dataset.p]).join(',')).join('|');
+    M.foco = sels.some((x) => vals(P()[x.dataset.p]).length) ? G.S.filter((s) => S.st.get(s.code).total && lnOf(G, s)).flatMap((s) => segCo(G, s)) : null;
     renderMap(G, S, sc, selC);
     renderStrip(G, S, sc, selC);
     renderDetail(G, S, sc, selC, isOb);
