@@ -335,12 +335,6 @@ body{background:#eef2f8}
   <section id="contratadas" class="ab-page" role="tabpanel" aria-labelledby="tab-contratadas" hidden>
     <p class="ab-label">Controle de contratadas</p>
     <div class="ab-grid">
-      <div class="ab-card wide accent" id="card-tram">
-        <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span>
-          <span style="display:flex;gap:8px;margin-left:auto"><button class="ab-btn" id="tr-exp" type="button">Expandir tudo</button><button class="ab-btn" id="tr-col" type="button">Recolher tudo</button></span></div>
-        <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba. Clique numa linha para abrir ou fechar.</p>
-        <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
-      </div>
       <div class="ab-card" id="card-emp">
         <h3>Status do As Built por empresa</h3>
         <div class="ab-legend" id="l-sdoc3"></div>
@@ -350,6 +344,12 @@ body{background:#eef2f8}
         <h3>Resumo por empresa</h3>
         <p class="ab-note">Documentos por Status do As Built. Clique no cabeçalho para ordenar. % finalizado = AS Built Finalizado ÷ total.</p>
         <div class="ab-scroll" id="t-resumo" data-source="documentos"></div>
+      </div>
+      <div class="ab-card wide accent" id="card-tram">
+        <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span>
+          <span style="display:flex;gap:8px;margin-left:auto"><button class="ab-btn" id="tr-exp" type="button">Expandir tudo</button><button class="ab-btn" id="tr-col" type="button">Recolher tudo</button></span></div>
+        <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba. Clique numa linha para abrir ou fechar.</p>
+        <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
       </div>
     </div>
   </section>
