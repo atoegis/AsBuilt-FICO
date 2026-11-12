@@ -1037,12 +1037,17 @@ body{background:#eef2f8}
       { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
-    lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: 440 });
     setText('h-omes', 'Emissões em ' + mLab(ref));
     monthCards($('t-omes'), F, ref);
     gauge($('g-oader'), [{ v: apr / plan, target: 0.8, label: 'Aprovados ÷ planejado até ' + mLab(ref), color: apr / plan >= 0.8 ? 'var(--good)' : 'var(--bad)', sub: `${fmt(apr)} de ${fmt(plan)}` }]);
     legend($('l-sdoc4'), SDOC, (k) => SDOC_C[k]);
     hbars($('c-oativo'), groupStatus(F, 'ativo', SDOC, 'sdoc', { blank: '(sem ativo)' }), SDOC, (k) => SDOC_C[k]);
+    // Curva S acompanha a altura do quadro de ativos quando os dois estão lado a lado (recalcula a cada filtro)
+    const lado = $('card-ocurva').offsetTop === $('card-oativo').offsetTop;
+    const svgA = $('c-oativo').querySelector('svg'), hA = svgA ? svgA.getBoundingClientRect().height : 0;
+    const topo = (c, k) => $(k).getBoundingClientRect().top - $(c).getBoundingClientRect().top; // altura do cabeçalho de cada quadro
+    const hC = lado ? Math.max(440, Math.round(hA + topo('card-oativo', 'c-oativo') - topo('card-ocurva', 'c-ocurva'))) : 440;
+    lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: hC });
     setText('h-oemp', 'Planejado x emitido por empresa até ' + mLab(ref));
     const re = d3.rollups(F, (v) => {
       const pl = v.filter((r) => leM(r.prev, ref)).length, ap = v.filter((r) => r.real && leM(r.tend, ref)).length, tr = v.filter((r) => r.tram && leM(r.cdoc, ref)).length;
