@@ -144,6 +144,8 @@ body{background:#eef2f8}
 .ab-tree tr.lv2 .vl,.ab-tree tr.lvd .vl{font-weight:700}
 .ab-tree tr.lv2 .tt,.ab-tree tr.lvd .tt{color:var(--ink-mid);font-size:12px;max-width:44rem;white-space:normal;margin-top:2px}
 .ab-tree td.c{text-align:center}
+.ab-toggle{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink-mid);cursor:pointer;white-space:nowrap}
+.ab-toggle input{accent-color:var(--orange);width:15px;height:15px;margin:0}
 .ab-tree th.num{width:5.5rem}.ab-tree th.c{width:10rem}.ab-tree td.num{padding-right:18px}
 .ab-scroll.flat{max-height:none;border-top:0}
 .ab-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink)}
@@ -366,7 +368,7 @@ body{background:#eef2f8}
     </div>
     <div class="ab-row2">
       <div class="ab-card" id="card-ocurva">
-        <h3>Curva S dos obrigatórios</h3>
+        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
         <p class="ab-note">Eixo a partir de jun/26; o primeiro ponto já inclui o acumulado anterior. Valores acumulados nos pontos em que a curva muda. Tendência usa a data prevista para docs previstos de ago/26 em diante, como no Power BI. Em trâmite acumula pela data prevista.</p>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
@@ -537,6 +539,11 @@ body{background:#eef2f8}
     }) : [el('div', 'ab-ms-vazio', 'Nada encontrado')]));
   }
   document.addEventListener('click', () => document.querySelectorAll('.ab-ms-pop').forEach((o) => { if (!o.hidden) { o.hidden = true; o.previousElementSibling.setAttribute('aria-expanded', 'false'); } }));
+  // opção de mostrar/esconder a tendência na Curva S dos obrigatórios (lembrada neste navegador)
+  let showTend = true;
+  try { showTend = localStorage.getItem('ab-tend') !== '0'; } catch (e) {}
+  $('o-tend').checked = showTend;
+  $('o-tend').addEventListener('change', (e) => { showTend = e.target.checked; try { localStorage.setItem('ab-tend', showTend ? '1' : '0'); } catch (er) {} dash.setParams({}); });
   const refSel = [$('f-ref-ob')];
   for (const s of refSel) {
     for (let i = OB0; i <= 2027 * 12 + 11; i++) s.append(new Option(mLab(i), mKey(i)));
@@ -1026,7 +1033,7 @@ body{background:#eef2f8}
     const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(F, idxs, (r) => r.prev) },
-      { name: 'Tendência', color: C[0], values: cumul(F, idxs, (r) => r.tendAj) },
+      ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(F, idxs, (r) => r.tendAj) }] : []),
       { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
       { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
     ];
