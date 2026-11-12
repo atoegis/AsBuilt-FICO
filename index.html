@@ -262,9 +262,8 @@ body{background:#eef2f8}
   <nav class="ab-tabs" role="tablist" aria-label="Páginas do painel">
     <button class="ab-tab" role="tab" data-tab="visao" id="tab-visao"><span class="tnum">1</span>Visão geral</button>
     <button class="ab-tab" role="tab" data-tab="contratadas" id="tab-contratadas"><span class="tnum">2</span>Contratadas</button>
-    <button class="ab-tab" role="tab" data-tab="curva" id="tab-curva"><span class="tnum">3</span>Curva S e aderência</button>
-    <button class="ab-tab" role="tab" data-tab="obrigatorios" id="tab-obrigatorios"><span class="tnum">4</span>Documentos obrigatórios</button>
-    <button class="ab-tab" role="tab" data-tab="mapa" id="tab-mapa"><span class="tnum">5</span>Mapa de avanço</button>
+    <button class="ab-tab" role="tab" data-tab="obrigatorios" id="tab-obrigatorios"><span class="tnum">3</span>Documentos obrigatórios</button>
+    <button class="ab-tab" role="tab" data-tab="mapa" id="tab-mapa"><span class="tnum">4</span>Mapa de avanço</button>
   </nav>
 
   <div class="ab-wrap">
@@ -278,7 +277,6 @@ body{background:#eef2f8}
     <label>Status do As Built<select id="f-sdet" data-p="sdet" data-k="sdet"></select></label>
     <label>Obrigatório<select id="f-obr" data-p="obr" data-k="obr"></select></label>
     <label>Pendência na implantação<select id="f-pend" data-p="pend" data-k="pend"></select></label>
-    <label class="ab-refwrap">Mês de referência<select id="f-ref"></select></label>
     <button class="ab-btn" id="ab-reset" type="button">Limpar filtros</button>
   </div>
   <div class="ab-filters" id="ab-filters-ob" hidden>
@@ -355,32 +353,6 @@ body{background:#eef2f8}
   </section>
 
   <!-- CURVA S -->
-  <section id="curva" class="ab-page" role="tabpanel" aria-labelledby="tab-curva" hidden>
-    <p class="ab-label">Planejado x realizado</p>
-    <div class="ab-grid">
-      <div class="ab-card wide" id="card-curva">
-        <h3>Curva S de emissão</h3>
-        <p class="ab-note">Quantidades acumuladas. Realizado = aprovado pela Vale ou As Built finalizado, pela data de ação do CDOC. Realizado e em trâmite vão até o mês de referência.</p>
-        <div class="ab-legend" id="l-curva"></div>
-        <div class="ab-chart tall dash-skeleton" id="c-curva" data-source="documentos"></div>
-      </div>
-      <div class="ab-card" id="card-mes">
-        <h3 id="h-mes">No mês</h3>
-        <p class="ab-note">Pela data de ação do CDOC. Total = acumulado até hoje.</p>
-        <div class="ab-scroll flat" id="t-mes" data-source="documentos"></div>
-      </div>
-      <div class="ab-card" id="card-ader">
-        <h3>Aderência</h3>
-        <p class="ab-note" id="n-ader">Meta de 80%.</p>
-        <div class="ab-gauges" id="g-ader" data-source="documentos"></div>
-      </div>
-      <div class="ab-card wide" id="card-grupo">
-        <h3 id="h-grupo">Planejado x emitido por grupo de empresa</h3>
-        <p class="ab-note">Mesmo agrupamento do Power BI: ÁPIA - PCT 3, EMPA, ATERPA e demais empresas. Não emitidos = planejado − aprovados − em trâmite.</p>
-        <div class="ab-scroll flat" id="t-grupo" data-source="documentos"></div>
-      </div>
-    </div>
-  </section>
 
   <!-- OBRIGATÓRIOS -->
   <section id="obrigatorios" class="ab-page" role="tabpanel" aria-labelledby="tab-obrigatorios" hidden>
@@ -564,7 +536,7 @@ body{background:#eef2f8}
     }) : [el('div', 'ab-ms-vazio', 'Nada encontrado')]));
   }
   document.addEventListener('click', () => document.querySelectorAll('.ab-ms-pop').forEach((o) => { if (!o.hidden) { o.hidden = true; o.previousElementSibling.setAttribute('aria-expanded', 'false'); } }));
-  const refSel = [$('f-ref'), $('f-ref-ob')];
+  const refSel = [$('f-ref-ob')];
   for (const s of refSel) {
     for (let i = AX0; i <= 2027 * 12 + 11; i++) s.append(new Option(mLab(i), mKey(i)));
     s.addEventListener('change', () => dash.setParams({ ref: s.value }));
@@ -934,7 +906,6 @@ body{background:#eef2f8}
     document.querySelectorAll('.ab-page').forEach((s) => { s.hidden = s.id !== t; });
     const ob = t === 'obrigatorios';
     $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa' || t === 'contratadas'; $('ct-kpis').hidden = t !== 'contratadas';
-    document.querySelector('.ab-refwrap').hidden = t !== 'curva';
     selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' && !CT_F.has(x.dataset.p); });
     document.querySelector('.ab-refwrap-ob').hidden = !ob;
     if (link) dash.setLink(t);
@@ -1033,38 +1004,6 @@ body{background:#eef2f8}
 
       }
 
-      if (tab === 'curva') {
-        const idxs = range(AX0, 2027 * 12 + 11);
-        const series = [
-          { name: 'Planejado', color: 'var(--ink)', values: cumul(F, idxs, (r) => r.prev) },
-          { name: 'Reprogramado', color: C[1], dash: true, values: cumul(F, idxs, (r) => r.reprog) },
-          { name: 'Dep. obra (sem pendência)', color: C[3], dash: true, values: cumul(F, idxs, (r) => r.prev, (r) => r.pend !== 'SIM') },
-          { name: 'Tendência', color: C[0], values: cumul(F, idxs, (r) => r.tend) },
-          { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
-          { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
-        ];
-        legend($('l-curva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, (k) => (series.find((s) => s.name === k).dash ? 'ln dash' : 'ln'));
-        lineChart($('c-curva'), idxs, series, ref);
-        setText('h-mes', 'Emissões em ' + mLab(ref));
-        monthCards($('t-mes'), F, ref);
-        const plan = F.filter((r) => leM(r.prev, ref)).length, apr = F.filter((r) => r.real && leM(r.tend, ref)).length;
-        const emit = F.filter((r) => r.emit).length, real = F.filter((r) => r.real).length;
-        gauge($('g-ader'), [
-          { v: apr / plan, target: 0.8, label: 'Aprovados ÷ planejado até ' + mLab(ref), color: apr / plan >= 0.8 ? 'var(--good)' : 'var(--bad)', sub: `${fmt(apr)} de ${fmt(plan)}` },
-          { v: real / emit, target: 0.8, label: 'Aprovados ÷ emitidos', color: real / emit >= 0.8 ? 'var(--good)' : 'var(--bad)', sub: `${fmt(real)} de ${fmt(emit)}` }
-        ]);
-        setText('n-ader', 'Meta de 80% (traço). Aprovados contados pela data de tendência, como no Power BI.');
-        setText('h-grupo', 'Planejado x emitido por grupo de empresa até ' + mLab(ref));
-        const gr = (e) => (GRUPOS.includes(e) ? e : 'DEMAIS EMPRESAS');
-        const rowsG = [...GRUPOS, 'DEMAIS EMPRESAS'].map((gname) => {
-          const v = F.filter((r) => gr(r.emp) === gname);
-          const pl = v.filter((r) => leM(r.prev, ref)).length, ap = v.filter((r) => r.real && leM(r.tend, ref)).length, tr = v.filter((r) => r.tram && leM(r.cdoc, ref)).length;
-          return { g: gname, plan: pl, apr: ap, tram: tr, emit: ap + tr, ne: pl - ap - tr, ad: pl ? ap / pl : null };
-        });
-        const sum = (k) => d3.sum(rowsG, (r) => r[k]);
-        const colsG = [{ k: 'g', label: 'Grupo' }, { k: 'plan', label: 'Planejado', num: true, fmt }, { k: 'emit', label: 'Emitidos', num: true, fmt }, { k: 'apr', label: 'Aprovados', num: true, fmt }, { k: 'tram', label: 'Em trâmite', num: true, fmt }, { k: 'ne', label: 'Não emitidos', num: true, fmt }, { k: 'ad', label: 'Aderência', num: true, fmt: pct }];
-        table($('t-grupo'), colsG, rowsG, { total: { g: 'Total', plan: sum('plan'), emit: sum('emit'), apr: sum('apr'), tram: sum('tram'), ne: sum('ne'), ad: sum('plan') ? sum('apr') / sum('plan') : null } });
-      }
       return;
     }
 
@@ -1604,7 +1543,7 @@ body{background:#eef2f8}
   }
 
   const start = location.hash.slice(1);
-  showTab(['visao', 'contratadas', 'curva', 'obrigatorios', 'mapa'].includes(start) ? start : 'visao', false);
+  showTab(['visao', 'contratadas', 'obrigatorios', 'mapa'].includes(start) ? start : 'visao', false);
   dash.onData(draw);
 })();
 </script>
