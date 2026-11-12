@@ -135,14 +135,14 @@ body{background:#eef2f8}
 .ab-scroll.short{max-height:20rem}
 .ab-tree td{padding:5px 10px}
 .ab-tree tr.lv0 td{font-weight:700;background:color-mix(in srgb,var(--blue) 7%,var(--paper))}
-.ab-tree tr.lv1 td{font-weight:700}
-.ab-tree tr.lv0,.ab-tree tr.lv1{cursor:pointer}
+.ab-tree tr.lv1 td,.ab-tree tr.lvg td{font-weight:700}
+.ab-tree tr.lv0,.ab-tree tr.lv1,.ab-tree tr.lvg{cursor:pointer}
 .ab-tree .tg{display:inline-flex;align-items:center;gap:.45rem;white-space:nowrap}
 .ab-tree .tg b{display:inline-grid;place-items:center;width:1rem;height:1rem;border:1px solid var(--line);border-radius:3px;font-size:11px;line-height:1;color:var(--ink-soft);background:var(--paper)}
 .ab-tree tr.lv1 .tg{padding-left:1.5rem}
 .ab-tree tr.lv2 td:first-child{padding-left:4.2rem}
-.ab-tree tr.lv2 .vl{font-weight:700}
-.ab-tree tr.lv2 .tt{color:var(--ink-mid);font-size:12px;max-width:44rem;white-space:normal;margin-top:2px}
+.ab-tree tr.lv2 .vl,.ab-tree tr.lvd .vl{font-weight:700}
+.ab-tree tr.lv2 .tt,.ab-tree tr.lvd .tt{color:var(--ink-mid);font-size:12px;max-width:44rem;white-space:normal;margin-top:2px}
 .ab-tree td.c{text-align:center}
 .ab-tree th.num{width:5.5rem}.ab-tree th.c{width:10rem}.ab-tree td.num{padding-right:18px}
 .ab-scroll.flat{max-height:none;border-top:0}
@@ -336,7 +336,7 @@ body{background:#eef2f8}
     <p class="ab-label">Controle de contratadas</p>
     <div class="ab-grid">
       <div class="ab-card" id="card-emp">
-        <h3>Status do As Built por empresa</h3>
+        <h3 id="t-emp">Status do As Built por empresa</h3>
         <div class="ab-legend" id="l-sdoc3"></div>
         <div class="ab-chart dash-skeleton" id="c-emp" data-source="documentos"></div>
       </div>
@@ -348,7 +348,7 @@ body{background:#eef2f8}
       <div class="ab-card wide accent" id="card-tram">
         <div class="ab-tools"><h3>Documentos em trâmite</h3><span class="ab-count" id="cnt-tram"></span>
           <span style="display:flex;gap:8px;margin-left:auto"><button class="ab-btn" id="tr-exp" type="button">Expandir tudo</button><button class="ab-btn" id="tr-col" type="button">Recolher tudo</button></span></div>
-        <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba. Clique numa linha para abrir ou fechar.</p>
+        <p class="ab-note">Empresa → status do As Built → documento, pelos filtros da aba (com o filtro Obrigatório = SIM, entra o nível Ativo). Clique numa linha para abrir ou fechar.</p>
         <div class="ab-scroll" id="t-tram" data-source="documentos"></div>
       </div>
     </div>
@@ -648,7 +648,7 @@ body{background:#eef2f8}
     const endW = measure(svg, [fmt(max)]) + 8;
     const x = d3.scaleLinear([0, max], [lw, W - endW]);
     const g = svg.selectAll('g.row').data(rows).join('g').attr('transform', (d, i) => `translate(0,${i * rowH + 4})`);
-    g.append('text').attr('class', 'ab-tick').attr('x', lw - 8).attr('y', rowH / 2 - 2).attr('dy', '.32em').attr('text-anchor', 'end').text((d, i) => labels[i]);
+    g.append('text').attr('class', 'ab-tick').attr('x', lw - 8).attr('y', rowH / 2 - 2).attr('dy', '.32em').attr('text-anchor', 'end').style('font-weight', (d) => (d.head ? 700 : null)).style('fill', (d) => (d.head ? 'var(--ink)' : null)).text((d, i) => labels[i]);
     g.each(function (d) {
       let x0 = lw; const sel = d3.select(this);
       for (const k of keys) {
@@ -796,42 +796,50 @@ body{background:#eef2f8}
 
   // tabela hierárquica: empresa → status do As Built → documento
   const treeOpen = new Set();
-  function tree(box, rows) {
-    box._rows = rows;
-    const byE = d3.groups(rows, (r) => r.emp || '(sem empresa)').sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'pt-BR'));
+  // níveis da árvore: empresa → (ativo, quando só obrigatórios) → status do As Built → documento
+  const NIV_EMP = { k: 'emp', blank: '(sem empresa)' }, NIV_AT = { k: 'ativo', blank: '(sem ativo)' }, NIV_ST = { k: 'sdet', blank: '(sem status)', chip: true };
+  const treeKeyOf = (r, levels, n) => levels.slice(0, n + 1).map((L) => r[L.k] || L.blank).join('|');
+  function tree(box, rows, levels) {
+    box._rows = rows; box._lv = levels = levels || box._lv || [NIV_EMP, NIV_ST];
     const uni = (v, k) => { const u = new Set(v.map((r) => r[k] || '')); return u.size === 1 ? [...u][0] || '--' : ''; };
     const t = el('table', 'ab-table ab-tree');
     const hr = el('tr');
-    for (const [lab, cls] of [['Empresa', ''], ['Qtd', 'num'], ['Tipo de emissão', 'c'], ['Aprovado CDOC?', 'c']]) { const th = el('th', cls); const d = el('span', 'ab-th', lab); d.style.cursor = 'default'; d.style.display = 'block'; d.style.boxSizing = 'border-box'; if (cls) d.style.textAlign = cls === 'num' ? 'right' : 'center'; th.append(d); hr.append(th); }
+    const tit = levels.map((L) => ({ emp: 'Empresa', ativo: 'Ativo', sdet: 'Status' }[L.k])).join(' › ');
+    for (const [lab, cls] of [[tit, ''], ['Qtd', 'num'], ['Tipo de emissão', 'c'], ['Aprovado CDOC?', 'c']]) { const th = el('th', cls); const d = el('span', 'ab-th', lab); d.style.cursor = 'default'; d.style.display = 'block'; d.style.boxSizing = 'border-box'; if (cls) d.style.textAlign = cls === 'num' ? 'right' : 'center'; th.append(d); hr.append(th); }
     t.append(el('thead')); t.tHead.append(hr);
     const tb = el('tbody');
     const grp = (lv, key, label, v, color) => {
-      const tr = el('tr', 'lv' + lv), td = el('td'), g = el('span', 'tg'), aberto = treeOpen.has(key);
+      const tr = el('tr', lv ? 'lvg' : 'lv0'), td = el('td'), g = el('span', 'tg'), aberto = treeOpen.has(key);
+      g.style.paddingLeft = (lv * 1.5) + 'rem';
       g.append(el('b', null, aberto ? '−' : '+'));
-      if (color) { const c = chip(label, color); g.append(c); } else g.append(document.createTextNode(label));
+      if (color) g.append(chip(label, color)); else g.append(document.createTextNode(label));
       td.append(g); tr.append(td, el('td', 'num', fmt(v.length)), el('td', 'c', uni(v, 'temi')), el('td', 'c', uni(v, 'acdoc')));
       tr.setAttribute('aria-expanded', String(aberto));
       tr.addEventListener('click', () => { if (treeOpen.has(key)) treeOpen.delete(key); else treeOpen.add(key); tree(box, box._rows); });
       tb.append(tr); return aberto;
     };
-    for (const [e, ve] of byE) {
-      if (!grp(0, e, e, ve)) continue;
-      const byS = d3.groups(ve, (r) => r.sdet || '(sem status)').sort((a, b) => b[1].length - a[1].length);
-      for (const [st, vs] of byS) {
-        if (!grp(1, e + '|' + st, st, vs, SDET_C[st] || C[7])) continue;
-        for (const r of [...vs].sort((a, b) => a.vale.localeCompare(b.vale, 'pt-BR', { numeric: true }))) {
-          const tr = el('tr', 'lv2'), td = el('td');
+    const walk = (v, n, pre) => {
+      const L = levels[n];
+      const gs = d3.groups(v, (r) => r[L.k] || L.blank).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'pt-BR'));
+      for (const [lab, vv] of gs) {
+        const key = pre ? pre + '|' + lab : lab;
+        if (!grp(n, key, lab, vv, L.chip ? (SDET_C[lab] || C[7]) : null)) continue;
+        if (n + 1 < levels.length) { walk(vv, n + 1, key); continue; }
+        for (const r of [...vv].sort((a, b) => a.vale.localeCompare(b.vale, 'pt-BR', { numeric: true }))) {
+          const tr = el('tr', 'lvd'), td = el('td');
+          td.style.paddingLeft = (levels.length * 1.5 + 1.2) + 'rem';
           td.append(el('div', 'vl', r.vale || '(sem número)'), el('div', 'tt', r.tit));
           tr.append(td, el('td', 'num', '1'), el('td', 'c', r.temi || '--'), el('td', 'c', r.acdoc || '--'));
           tb.append(tr);
         }
       }
-    }
+    };
+    walk(rows, 0, '');
     t.append(tb);
     if (!rows.length) box.replaceChildren(el('div', 'ab-empty', 'Nenhum documento com os filtros atuais.'));
     else box.replaceChildren(t);
   }
-  $('tr-exp').addEventListener('click', () => { const b = $('t-tram'); for (const r of b._rows || []) { treeOpen.add(r.emp || '(sem empresa)'); treeOpen.add((r.emp || '(sem empresa)') + '|' + (r.sdet || '(sem status)')); } tree(b, b._rows || []); });
+  $('tr-exp').addEventListener('click', () => { const b = $('t-tram'), lv = b._lv || [NIV_EMP, NIV_ST]; for (const r of b._rows || []) for (let n = 0; n < lv.length; n++) treeOpen.add(treeKeyOf(r, lv, n)); tree(b, b._rows || []); });
   $('tr-col').addEventListener('click', () => { treeOpen.clear(); const b = $('t-tram'); tree(b, b._rows || []); });
 
   // tabela ordenável
@@ -975,6 +983,7 @@ body{background:#eef2f8}
       }
 
       if (tab === 'contratadas') {
+        const soObrig = (() => { const v = vals(P().obr); return v.length === 1 && v[0] === 'SIM'; })();
         // uma caixa por Status do As Built (ordem fixa; só os status que existem na base)
         const ordemS = Object.keys(SDET_C);
         const sts = [...new Set(sim.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemS.indexOf(a) + 1) || 99) - ((ordemS.indexOf(b) + 1) || 99) || a.localeCompare(b, 'pt-BR'));
@@ -987,13 +996,24 @@ body{background:#eef2f8}
 
         // trâmite
         setText('cnt-tram', `${fmt(F.length)} documentos`);
-        tree($('t-tram'), F);
+        tree($('t-tram'), F, soObrig ? [NIV_EMP, NIV_AT, NIV_ST] : [NIV_EMP, NIV_ST]);
 
         const ordemSD = Object.keys(SDET_C);
         const SDK = [...new Set(F.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemSD.indexOf(a) + 1) || 99) - ((ordemSD.indexOf(b) + 1) || 99));
         const sdC = (k) => SDET_C[k] || 'var(--ink-soft)';
         legend($('l-sdoc3'), SDK, sdC);
-        hbars($('c-emp'), groupStatus(F.map((r) => r.sdet ? r : Object.assign({}, r, { sdet: '(sem status)' })), 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 }), SDK, sdC);
+        // só obrigatórios (filtro Obrigatório = SIM): segmenta também por ativo
+        const FS = F.map((r) => r.sdet ? r : Object.assign({}, r, { sdet: '(sem status)' }));
+        if (soObrig) {
+          const linhas = [];
+          for (const ge of groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)' })) {
+            linhas.push(Object.assign(ge, { head: true }));
+            const sub = groupStatus(FS.filter((r) => (r.emp || '(sem empresa)') === ge.label), 'ativo', SDK, 'sdet', { blank: '(sem ativo)' });
+            for (const sa of sub) linhas.push(Object.assign(sa, { label: '› ' + sa.label }));
+          }
+          hbars($('c-emp'), linhas, SDK, sdC);
+        } else hbars($('c-emp'), groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 }), SDK, sdC);
+        setText('t-emp', soObrig ? 'Status do As Built por empresa e ativo' : 'Status do As Built por empresa');
 
         // resumo por empresa, pelo Status do As Built
         const CURTO = { 'AS Built Finalizado': 'Finalizado', 'Aprovado Pela Vale': 'Aprov. Vale', 'Aguardando análise Vale': 'Aguard. Vale', 'Pendente análise CDOC': 'Pend. CDOC', 'Reprovado Pela Vale': 'Reprov. Vale', 'Reprovado pelo CDOC': 'Reprov. CDOC', 'Não Emitido': 'Não emitido' };
