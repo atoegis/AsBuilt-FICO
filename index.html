@@ -367,7 +367,7 @@ body{background:#eef2f8}
     <div class="ab-row2">
       <div class="ab-card" id="card-ocurva">
         <h3>Curva S dos obrigatórios</h3>
-        <p class="ab-note">Valores acumulados nos pontos em que a curva muda. Tendência usa a data prevista para docs previstos de ago/26 em diante, como no Power BI. Em trâmite acumula pela data prevista.</p>
+        <p class="ab-note">Eixo a partir de jun/26; o primeiro ponto já inclui o acumulado anterior. Valores acumulados nos pontos em que a curva muda. Tendência usa a data prevista para docs previstos de ago/26 em diante, como no Power BI. Em trâmite acumula pela data prevista.</p>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
       </div>
@@ -457,6 +457,7 @@ body{background:#eef2f8}
   const TODAY_M = NOW.getFullYear() * 12 + NOW.getMonth();
   const TODAY_MS = Date.UTC(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
   const AX0 = 2025 * 12; // jan/25, início do eixo usado no Power BI
+  const OB0 = 2026 * 12 + 5; // jun/26: início da Curva S e do mês de referência dos obrigatórios
 
   const REAL = new Set(['AS Built Finalizado', 'Aprovado Pela Vale']);
   const ANDAM = new Set(['Aguardando análise Vale', 'Pendente análise CDOC']);
@@ -538,7 +539,7 @@ body{background:#eef2f8}
   document.addEventListener('click', () => document.querySelectorAll('.ab-ms-pop').forEach((o) => { if (!o.hidden) { o.hidden = true; o.previousElementSibling.setAttribute('aria-expanded', 'false'); } }));
   const refSel = [$('f-ref-ob')];
   for (const s of refSel) {
-    for (let i = AX0; i <= 2027 * 12 + 11; i++) s.append(new Option(mLab(i), mKey(i)));
+    for (let i = OB0; i <= 2027 * 12 + 11; i++) s.append(new Option(mLab(i), mKey(i)));
     s.addEventListener('change', () => dash.setParams({ ref: s.value }));
   }
   const setDefaults = () => dash.setParams({ ref: mKey(Math.min(Math.max(TODAY_M, AX0), 2027 * 12 + 11)) });
@@ -1022,7 +1023,7 @@ body{background:#eef2f8}
     setText('ko-ne', fmt(ne)); setText('ko-ne-p', pct(ne / n) + ' do total'); setText('ko-plan', fmt(plan)); setText('ko-plan-n', 'previstos até ' + mLab(ref));
     setText('ab-take', n ? `Documentos obrigatórios: ${fmt(real)} de ${fmt(n)} aprovados (${pct(real / n)}). Aderência até ${mLab(ref)}: ${pct(apr / plan)} contra meta de 80%.` : 'Nenhum documento obrigatório com os filtros atuais.');
     const last = d3.max(F, (r) => Math.max(mIdx(r.prev) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
-    const idxs = range(AX0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
+    const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(F, idxs, (r) => r.prev) },
       { name: 'Tendência', color: C[0], values: cumul(F, idxs, (r) => r.tendAj) },
