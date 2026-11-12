@@ -485,7 +485,7 @@ body{background:#eef2f8}
         disc: r['Disciplina'] || '', esp: r['Especialidade'] || '', lote: r['Lote'] || '', pac: r['Pacote'] || '',
         seg: r['Segmento'] || '', ativo: r['Ativo'] || '', emp: r['Empresa Responsável'] || '', colab: r['Empresa Colaboradora'] || '',
         nap: r['NAP Associada'] || '', prev: r['Data Prevista'] || null, reprog: r['Data Reprogramada'] || null,
-        cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || null, concl: r['Data Conclusão'] || null,
+        cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || r['Data Conclusão'] || r['Data Reprogramada'] || r['Data Prevista'] || null, // sem tendência: conclusão → reprogramada → prevista concl: r['Data Conclusão'] || null,
         nrep: +r['Nº Reprovações'] || 0, pend: r['Pendência Implantação'] || '', sdoc: r['Status Documento'] || '', sdet: r['Status Detalhado'] || '',
         temi: r['Tipo de Emissão'] || '', obr: r['Obrigatório'] || '', acdoc: (r['Aprovado CDOC'] || '').replace(/^NAO$/, 'NÃO')
       };

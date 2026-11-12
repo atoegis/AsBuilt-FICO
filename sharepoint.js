@@ -1,5 +1,5 @@
 /* Leitura direta da planilha NOVA BD ASBUILT-PAINEL no SharePoint pelo Microsoft Graph.
-   Converte as linhas das tabelas PBI e PBI_9 no mesmo formato dos CSV de dados/ e entrega ao painel. */
+   Converte as linhas da tabela PBI (aba BD ASBUILT; obrigatórios = linhas OBRIGATÓRIO) no mesmo formato dos CSV de dados/ e entrega ao painel. */
 (function () {
   const CFG = window.ASBUILT_CONFIG || {};
   const configurado = !!(CFG.clientId && window.msal);
@@ -153,8 +153,10 @@
       const tk = await token();
       const item = await graph(`/shares/${shareId(CFG.arquivo)}/driveItem?$select=id,name,lastModifiedDateTime,lastModifiedBy,parentReference`, tk);
       const base = `/drives/${item.parentReference.driveId}/items/${item.id}`;
-      const bd = converter(await lerTabela(base, CFG.tabelaDocumentos, tk), true, ref);
-      const ob = converter(await lerTabela(base, CFG.tabelaObrigatorios, tk), false, ref);
+      // tudo sai da aba BD ASBUILT; os obrigatórios são as linhas marcadas OBRIGATÓRIO
+      const linhasBD = await lerTabela(base, CFG.tabelaDocumentos, tk);
+      const bd = converter(linhasBD, true, ref);
+      const ob = converter(linhasBD.filter((r) => /^OBRIGAT[ÓO]RIO$/i.test(txt(r['Necessário Emissão de As Built?']))), false, ref);
       dash._set('documentos', bd); dash._set('obrigatorios', ob);
       const quando = new Date(item.lastModifiedDateTime).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
       const quem = item.lastModifiedBy && item.lastModifiedBy.user ? ' por ' + item.lastModifiedBy.user.displayName : '';

@@ -6,6 +6,6 @@ window.ASBUILT_CONFIG = {
   tenantId: '',            // "ID do diretório (locatário)" da Vale (ou 'organizations')
   arquivo: 'https://globalvale.sharepoint.com/sites/LACAL/Shared%20Documents/FICO/FICO%20-%20AS%20BUILT/NOVA%20BD%20ASBUILT-PAINEL.xlsx',
   tabelaDocumentos: 'PBI',      // tabela da aba BD ASBUILT
-  tabelaObrigatorios: 'PBI_9',  // tabela da aba Documentos Obrigatorios
+  tabelaObrigatorios: 'PBI_9',  // não usada: os obrigatórios vêm da BD (linhas OBRIGATÓRIO)
   escopos: ['Files.Read.All']
 };

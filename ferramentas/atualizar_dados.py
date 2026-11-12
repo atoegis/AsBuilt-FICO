@@ -177,14 +177,15 @@ def gravar(nome, linhas):
 
 
 def main(caminho):
-    cfg = {'documentos': 'PBI', 'obrigatorios': 'PBI_9'}
     tabelas = localizar_tabelas(caminho)
     wb = openpyxl.load_workbook(caminho, data_only=True, read_only=True)
     ordem, oae_seg = referencia()
     resumo = {}
-    for chave, arq, eh_bd in (('documentos', 'asbuilt_documentos.csv', True), ('obrigatorios', 'asbuilt_obrigatorios.csv', False)):
-        linhas, aba = ler_tabela(wb, tabelas, cfg[chave])
-        conv = converter(linhas, eh_bd, ordem, oae_seg)
+    # tudo sai da aba BD ASBUILT (tabela PBI); os obrigatórios são as linhas com OBRIGATÓRIO
+    linhas, aba = ler_tabela(wb, tabelas, 'PBI')
+    obrig = [r for r in linhas if txt(r.get('Necessário Emissão de As Built?')).upper() in ('OBRIGATÓRIO', 'OBRIGATORIO')]
+    for chave, arq, eh_bd, lin in (('documentos', 'asbuilt_documentos.csv', True, linhas), ('obrigatorios', 'asbuilt_obrigatorios.csv', False, obrig)):
+        conv = converter(lin, eh_bd, ordem, oae_seg)
         gravar(arq, conv)
         resumo[chave] = {'aba': aba, 'linhas': len(conv)}
     stamp = {'atualizado_em': dt.datetime.now().astimezone().isoformat(timespec='minutes'), 'arquivo': re.sub(r'^[0-9a-f]{8}-', '', Path(caminho).name).replace('_', ' '), **resumo}

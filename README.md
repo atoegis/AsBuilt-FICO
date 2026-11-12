@@ -13,7 +13,7 @@ Visão geral, Contratadas, Documentos obrigatórios e Mapa de avanço
 - `vendor/msal-browser.min.js` — biblioteca oficial de login da Microsoft (MSAL 3.27).
 - `PEDIDO_TI.md` — o que pedir à TI.
 - `dados/` — bases em CSV:
-  - `asbuilt_documentos.csv` e `asbuilt_obrigatorios.csv`: planilha NOVA BD ASBUILT-PAINEL (abas BD ASBUILT e Documentos Obrigatorios),
+  - `asbuilt_documentos.csv` e `asbuilt_obrigatorios.csv`: planilha NOVA BD ASBUILT-PAINEL, só pela aba BD ASBUILT (os obrigatórios são as linhas marcadas OBRIGATÓRIO),
     com as colunas "Segmentos (mapa)" e "OAE (mapa)" calculadas a partir da Tabela de segmentos rev9;
   - `tracado_segmentos.csv`, `tracado_oaes.csv`, `tracado_municipios.csv`: Tabela de segmentos rev9;
   - `tracado_eixo.csv`: eixo georreferenciado km 0 a 292 (mesma geometria do Mapa Superestrutura).
@@ -28,20 +28,20 @@ o navegador bloqueia a leitura dos CSV.
 
 ## Dados ao vivo do SharePoint
 Com `clientId` e `tenantId` preenchidos em `config.js`, o painel mostra o botão **Entrar com Microsoft**.
-Depois do login, ele lê as tabelas `PBI` (aba BD ASBUILT) e `PBI_9` (aba Documentos Obrigatorios)
+Depois do login, ele lê a tabela `PBI` (aba BD ASBUILT)
 da planilha NOVA BD ASBUILT-PAINEL no SharePoint, a cada abertura ou no botão **Atualizar agora**.
 Veja em `PEDIDO_TI.md` o que pedir à TI para gerar esses dois valores.
 
 Sem login (ou sem `config.js` preenchido), o painel usa a cópia salva em `dados/`.
 
 ## Regras que o painel aplica na planilha
-- Usa as tabelas `PBI` e `PBI_9`. Não renomeie as tabelas nem os cabeçalhos das colunas.
+- Usa só a tabela `PBI` (aba BD ASBUILT); a aba Documentos Obrigatorios não é mais lida. Não renomeie a tabela nem os cabeçalhos das colunas.
+- Documentos obrigatórios = linhas da BD com "Necessário Emissão de As Built?" = OBRIGATÓRIO (empresa, ativo, datas e status da própria BD).
+- Data Tendência vazia: o painel usa a Data Conclusão; sem ela, a Data Reprogramada; sem ela, a Data Prevista.
 - Na BD ASBUILT, "Necessário Emissão de As Built?" = OBRIGATÓRIO conta como SIM. A coluna "Obrigatório" (SIM/NÃO) dos dados guarda essa marcação e alimenta o filtro "Obrigatório".
-- Nos Documentos Obrigatórios, linhas com "Necessário Emissão de As Built?" = AVALIAR ficam fora do painel.
 - PACOTE 1A e 1B são tratados como PACOTE 1 (também no diagrama linear).
 - Lote definido pelo Pacote: LOTE 01 = PCT 1, 2 e 3; LOTE 02 = PCT 4, 5, 6, 7 e 8; LOTE 03 = PCT 9, 10 e 11.
   Sem pacote, o painel mantém o lote da planilha se for LOTE 1, 2, 3 (gravado como LOTE 01, 02, 03) ou GERAL; outros valores (ex.: LOTE 4, LOTE 5) ficam sem lote.
-- Nos Documentos Obrigatórios, linhas com "Necessário Emissão de As Built?" = AVALIAR ficam fora do painel.
 - Na BD ASBUILT, considera apenas "Necessário Emissão de As Built?" = SIM ou AVALIAR.
 - Localiza cada documento no traçado pela coluna Segmento ou, se vazia, pelo Ativo (lista de OAEs da Tabela de segmentos rev9).
   Nomes novos de OAE ou de segmento precisam ser incluídos em `sharepoint.js` (listas ATIVO e SEGNAME).

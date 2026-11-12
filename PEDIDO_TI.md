@@ -34,4 +34,3 @@ Esses dois valores vão no arquivo `config.js` do painel. Nenhum segredo de clie
 - `GET /shares/{url-codificada}/driveItem` — localizar o arquivo
 - `GET /drives/{drive}/items/{item}/workbook/tables('PBI')/headerRowRange`
 - `GET /drives/{drive}/items/{item}/workbook/tables('PBI')/rows?$top=2000&$skip=…`
-- idem para a tabela `PBI_9`
