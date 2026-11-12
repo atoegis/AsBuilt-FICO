@@ -31,7 +31,7 @@ body{background:#eef2f8}
 #dash-root{--dash-gutter:0}
 #dash-root .ab{
   --navy-deep:#10203a;--navy:#1f4e79;--blue:#3578bc;--blue-soft:#6fa1d8;--orange:#f89b32;--orange-dk:#e07d12;
-  --bg:#eef2f8;--paper:#ffffff;--ink:#16233a;--ink-mid:#45566f;--ink-soft:#7c8aa3;--line:#d7e0ee;
+  --bg:#eef2f8;--paper:#ffffff;--ink:#16233a;--ink-mid:#364660;--ink-soft:#5f6d85;--line:#d7e0ee;
   --good:#1f7a4d;--good-2:#4fae7b;--good-bg:#e1f3ea;--warn:#a8620f;--warn-bg:#fbeed9;--bad:#b4322a;--bad-bg:#f8e1df;
   --muted-bar:#c3cfdf;--river:#9cc5ea;--river-line:#5b93cf;--mun-line:#cdd7e6;--road:#e3a85c;--purple:#6b3db5;--grid:#e3e9f2;
   --shadow:0 1px 2px rgba(16,32,58,.06),0 14px 32px -16px rgba(16,32,58,.28);
@@ -108,12 +108,19 @@ body{background:#eef2f8}
 @media (max-width:1100px){.ab-grid>.ab-card,#card-gauges,#card-concl{grid-column:1/-1}}
 .ab-row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
 .ab-row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:stretch}
-.ab-row3 #card-oemp .ab-table td,.ab-row3 #card-oemp .ab-th{padding-inline:6px}
-.ab-row3 #card-oemp .ab-table{font-size:12px}
-.ab-row3 #card-oemp .ab-scroll{max-height:22rem}
+.ab-ocol{display:flex;flex-direction:column;gap:18px;min-width:0}
+.ab-osub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.ab-osub .ab-card{min-height:22rem}
+#card-omes .ab-table{font-size:15px}
+#card-omes .ab-table td{padding-block:12px}
+#card-oader .ab-gauges{flex:1;align-content:center}
+#card-oader .ab-gauge svg{max-width:300px!important}
+#card-oader .ab-gauge .gv{font-size:52px;margin-top:-2.6rem}
+#card-oader .ab-gauge .gk{font-size:14px}
+#card-oader .ab-gauge .gs{font-size:13px}
 .ab-vscroll{max-height:540px;overflow-y:auto;overflow-x:hidden;padding-right:4px}
 @media (max-width:1100px){.ab-row2{grid-template-columns:minmax(0,1fr)}.ab-row3{grid-template-columns:repeat(2,minmax(0,1fr))}.ab-row3 #card-oemp{grid-column:1/-1}}
-@media (max-width:700px){.ab-row3{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.ab-row3,.ab-osub{grid-template-columns:minmax(0,1fr)}}
 .ab-card.alert{border-top-color:var(--bad)}
 .ab-card.accent{border-top-color:var(--orange)}
 .ab-card h3{margin:0;font-size:16.5px;font-weight:700;color:var(--ink)}
@@ -367,10 +374,24 @@ body{background:#eef2f8}
       <div class="ab-kpi" style="--kc:var(--navy)"><span class="k">Planejado até o mês</span><span class="v" id="ko-plan">—</span><span class="n" id="ko-plan-n">—</span></div>
     </div>
     <div class="ab-row2">
-      <div class="ab-card" id="card-ocurva">
-        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
-        <div class="ab-legend" id="l-ocurva"></div>
-        <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
+      <div class="ab-ocol">
+        <div class="ab-card" id="card-ocurva">
+          <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
+          <div class="ab-legend" id="l-ocurva"></div>
+          <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
+        </div>
+        <div class="ab-osub" id="o-sub">
+          <div class="ab-card" id="card-omes">
+            <h3 id="h-omes">No mês</h3>
+            <p class="ab-note">Pela data de ação do CDOC.</p>
+            <div class="ab-scroll flat" id="t-omes" data-source="obrigatorios"></div>
+          </div>
+          <div class="ab-card" id="card-oader">
+            <h3>Aderência</h3>
+            <p class="ab-note" id="n-oader">Meta de 80%.</p>
+            <div class="ab-gauges" id="g-oader" data-source="obrigatorios"></div>
+          </div>
+        </div>
       </div>
       <div class="ab-card" id="card-oativo">
         <h3>Status por ativo</h3>
@@ -378,21 +399,9 @@ body{background:#eef2f8}
         <div class="ab-chart dash-skeleton" id="c-oativo" data-source="obrigatorios"></div>
       </div>
     </div>
-    <div class="ab-row3">
-      <div class="ab-card" id="card-omes">
-        <h3 id="h-omes">No mês</h3>
-        <p class="ab-note">Pela data de ação do CDOC.</p>
-        <div class="ab-scroll flat" id="t-omes" data-source="obrigatorios"></div>
-      </div>
-      <div class="ab-card" id="card-oader">
-        <h3>Aderência</h3>
-        <p class="ab-note" id="n-oader">Meta de 80%.</p>
-        <div class="ab-gauges" id="g-oader" data-source="obrigatorios"></div>
-      </div>
-      <div class="ab-card" id="card-oemp">
-        <h3 id="h-oemp">Planejado x emitido por empresa</h3>
-        <div class="ab-scroll" id="t-oemp" data-source="obrigatorios"></div>
-      </div>
+    <div class="ab-card" id="card-oemp">
+      <h3 id="h-oemp">Planejado x emitido por empresa</h3>
+      <div class="ab-scroll" id="t-oemp" data-source="obrigatorios"></div>
     </div>
   </section>
 
@@ -1044,9 +1053,10 @@ body{background:#eef2f8}
     hbars($('c-oativo'), groupStatus(F, 'ativo', SDOC, 'sdoc', { blank: '(sem ativo)' }), SDOC, (k) => SDOC_C[k]);
     // Curva S acompanha a altura do quadro de ativos quando os dois estão lado a lado (recalcula a cada filtro)
     const lado = $('card-ocurva').offsetTop === $('card-oativo').offsetTop;
-    const svgA = $('c-oativo').querySelector('svg'), hA = svgA ? svgA.getBoundingClientRect().height : 0;
-    const topo = (c, k) => $(k).getBoundingClientRect().top - $(c).getBoundingClientRect().top; // altura do cabeçalho de cada quadro
-    const hC = lado ? Math.max(440, Math.round(hA + topo('card-oativo', 'c-oativo') - topo('card-ocurva', 'c-ocurva'))) : 440;
+    const svgA = $('c-oativo').querySelector('svg'); // altura natural do quadro de ativos (o grid estica o cartão, então mede pelo gráfico)
+    const cardA = (svgA ? svgA.getBoundingClientRect().height : 0) + $('c-oativo').getBoundingClientRect().top - $('card-oativo').getBoundingClientRect().top + 21;
+    const resto = $('card-ocurva').getBoundingClientRect().height - $('c-ocurva').getBoundingClientRect().height; // cabeçalho + bordas do quadro da curva
+    const hC = lado ? Math.max(360, Math.round(cardA - $('o-sub').getBoundingClientRect().height - 18 - resto)) : 400;
     lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: hC });
     setText('h-oemp', 'Planejado x emitido por empresa até ' + mLab(ref));
     const re = d3.rollups(F, (v) => {
