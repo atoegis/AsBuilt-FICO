@@ -734,11 +734,11 @@ body{background:#eef2f8}
       // posiciona sem sobrepor: últimos pontos primeiro, depois realizado, planejado, tendência e trâmite
       const ordem = (l) => (l.fim ? 0 : 1) * 10 + series.indexOf(l.s) * (l.s.prio ?? 1);
       labs.sort((a, b) => ordem(a) - ordem(b));
-      const boxes = [], cw = 5.4, lh = 11, placed = [];
+      const boxes = [], cw = 7, lh = 14, placed = [];
       const hit = (bx) => boxes.some((o) => bx.x0 < o.x1 && bx.x1 > o.x0 && bx.y0 < o.y1 && bx.y1 > o.y0) || bx.y0 < 2 || bx.y1 > H - 26;
       for (const l of labs) {
         const w = fmt(l.v).length * cw + 4, py = y(l.v);
-        for (const dy of [-7, 14, -18, 25]) {
+        for (const dy of [-8, 17, -22, 31]) {
           const yy = py + dy, x0 = l.x > W - 20 ? l.x - w : l.x - w / 2;
           const bx = { x0, x1: x0 + w, y0: yy - lh + 2, y1: yy + 2 };
           if (!hit(bx)) { boxes.push(bx); l.y = yy; placed.push(l); break; }
@@ -749,7 +749,7 @@ body{background:#eef2f8}
       const lg = svg.append('g').style('pointer-events', 'none');
       for (const l of labs) {
         lg.append('circle').attr('cx', l.x).attr('cy', y(l.v)).attr('r', 2.6).style('fill', l.s.color).style('stroke', 'var(--paper)').attr('stroke-width', 1);
-        lg.append('text').attr('x', l.x).attr('y', l.y).attr('text-anchor', l.x > W - 20 ? 'end' : 'middle').style('font-size', '10.5px').style('font-weight', '700')
+        lg.append('text').attr('x', l.x).attr('y', l.y).attr('text-anchor', l.x > W - 20 ? 'end' : 'middle').style('font-size', '13px').style('font-weight', '700')
           .style('fill', l.s.color).style('paint-order', 'stroke').style('stroke', 'var(--paper)').attr('stroke-width', 3).attr('stroke-linejoin', 'round').text(fmt(l.v));
       }
     }
