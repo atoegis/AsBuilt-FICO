@@ -99,7 +99,7 @@ body{background:#eef2f8}
 .ab-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
 .ab-grid>.ab-card{grid-column:span 6}
 #card-gauges{grid-column:span 4}#card-concl{grid-column:span 8}
-#card-ativo .ab-chart,#card-pac .ab-chart,#card-emp .ab-chart{max-height:30rem;overflow-y:auto;overflow-x:hidden}
+#card-emp .ab-chart{max-height:30rem;overflow-y:auto;overflow-x:hidden}
 #card-resumo .ab-scroll{max-height:32rem}
 #card-resumo th .ab-th,#card-resumo td{padding-left:6px;padding-right:6px}#card-resumo td{font-size:12.5px}#card-resumo th .ab-th{font-size:10px;letter-spacing:.03em}
 #card-concl .ab-chart{flex:1}
@@ -318,12 +318,12 @@ body{background:#eef2f8}
         <div class="ab-legend" id="l-sdoc1"></div>
         <div class="ab-chart dash-skeleton" id="c-disc" data-source="documentos"></div>
       </div>
-      <div class="ab-card" id="card-pac">
+      <div class="ab-card wide" id="card-pac">
         <h3>Status por pacote</h3>
         <div class="ab-legend" id="l-sdoc2"></div>
         <div class="ab-chart dash-skeleton" id="c-pac" data-source="documentos"></div>
       </div>
-      <div class="ab-card" id="card-ativo">
+      <div class="ab-card wide" id="card-ativo">
         <h3>Status por ativo</h3>
         <p class="ab-note">Somente documentos ligados a um ativo (OAE, travessias).</p>
         <div class="ab-chart dash-skeleton" id="c-ativo" data-source="documentos"></div>
@@ -366,7 +366,7 @@ body{background:#eef2f8}
       <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Não emitidos</span><span class="v" id="ko-ne">—</span><span class="n" id="ko-ne-p">—</span></div>
       <div class="ab-kpi" style="--kc:var(--navy)"><span class="k">Planejado até o mês</span><span class="v" id="ko-plan">—</span><span class="n" id="ko-plan-n">—</span></div>
     </div>
-    <div class="ab-row2">
+    <div class="ab-row2" style="grid-template-columns:minmax(0,1fr)">
       <div class="ab-card" id="card-ocurva">
         <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
         <div class="ab-legend" id="l-ocurva"></div>
@@ -375,7 +375,7 @@ body{background:#eef2f8}
       <div class="ab-card" id="card-oativo">
         <h3>Status por ativo</h3>
         <div class="ab-legend" id="l-sdoc4"></div>
-        <div class="ab-vscroll"><div class="ab-chart dash-skeleton" id="c-oativo" data-source="obrigatorios"></div></div>
+        <div class="ab-chart dash-skeleton" id="c-oativo" data-source="obrigatorios"></div>
       </div>
     </div>
     <div class="ab-row3">
