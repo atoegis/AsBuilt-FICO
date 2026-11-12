@@ -1,7 +1,7 @@
 # Painel As Built — FICO
 
 Painel de controle da documentação As Built (Ferrovia de Integração Centro-Oeste), com cinco abas:
-Visão geral, Contratadas, Curva S e aderência, Documentos obrigatórios e Mapa de avanço
+Visão geral, Contratadas, Documentos obrigatórios e Mapa de avanço
 (mapa em MapLibre com fundos OpenStreetMap, Humanitário, OpenTopoMap e satélite).
 
 ## Arquivos
