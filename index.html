@@ -88,6 +88,9 @@ body{background:#eef2f8}
 .ab-ms-vazio{font-size:13px;color:var(--ink-soft);padding:6px}
 .ab-btn{font:inherit;font-size:13.5px;font-weight:700;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:6px 14px;color:var(--blue);cursor:pointer;height:fit-content}
 .ab-btn:hover{border-color:var(--blue)}
+.ab-semdata{display:inline-block;font-size:13px;font-weight:600;color:var(--warn);background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:20px;padding:4px 12px;margin-left:auto;margin-right:12px;white-space:nowrap}
+.ab-semdata b{font-weight:800}
+.ab-semdata:empty{display:none}
 .ab-btn-img{background:var(--blue);border-color:var(--blue);color:#fff}
 .ab-btn-img:hover{background:var(--navy);border-color:var(--navy)}
 .ab-btn:disabled{opacity:.6;cursor:wait}
@@ -382,7 +385,7 @@ body{background:#eef2f8}
     </div>
     <div class="ab-ogrid">
       <div class="ab-card" id="card-ocurva">
-        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
+        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
       </div>
@@ -1069,6 +1072,8 @@ body{background:#eef2f8}
     setText('ko-ne', fmt(ne)); setText('ko-ne-p', pct(ne / n) + ' do total'); setText('ko-plan', fmt(plan)); setText('ko-plan-n', 'previstos até ' + mLab(ref));
     setText('ab-take', n ? `Documentos obrigatórios: ${fmt(real)} de ${fmt(n)} aprovados (${pct(real / n)}). Aderência: ${pct(real / n)} contra meta de 80%.` : 'Nenhum documento obrigatório com os filtros atuais.');
     const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
+    const semData = F.length - FC.length;
+    $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
     const last = d3.max(FC, (r) => Math.max(mIdx(r.prev) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
     const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
     const series = [
