@@ -503,13 +503,14 @@ body{background:#eef2f8}
         disc: r['Disciplina'] || '', esp: r['Especialidade'] || '', lote: r['Lote'] || '', pac: r['Pacote'] || '',
         seg: r['Segmento'] || '', ativo: r['Ativo'] || '', emp: r['Empresa Responsável'] || '', colab: r['Empresa Colaboradora'] || '',
         nap: r['NAP Associada'] || '', prev: r['Data Prevista'] || null, reprog: r['Data Reprogramada'] || null,
-        cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || r['Data Conclusão'] || r['Data Reprogramada'] || r['Data Prevista'] || null, // sem tendência: conclusão → reprogramada → prevista concl: r['Data Conclusão'] || null,
+        cdoc: r['Data Ação CDOC'] || null, tend: r['Data Tendência'] || r['Data Conclusão'] || r['Data Reprogramada'] || r['Data Prevista'] || null, concl: r['Data Conclusão'] || null, // sem tendência: conclusão → reprogramada → prevista
         nrep: +r['Nº Reprovações'] || 0, pend: r['Pendência Implantação'] || '', sdoc: r['Status Documento'] || '', sdet: r['Status Detalhado'] || '',
         temi: r['Tipo de Emissão'] || '', obr: r['Obrigatório'] || '', acdoc: (r['Aprovado CDOC'] || '').replace(/^NAO$/, 'NÃO')
       };
       o.segs = (r['Segmentos (mapa)'] || '').split('|').filter(Boolean); o.oaes = (r['OAE (mapa)'] || '').split('|').filter(Boolean);
       o.real = REAL.has(o.sdet); o.andam = ANDAM.has(o.sdet); o.recus = RECUS.has(o.sdet);
       o.tram = o.andam || o.recus; o.emit = o.tram || o.real; o.res = resumo(o.sdet);
+      o.plano = o.reprog || o.prev; // planejado: data reprogramada quando houver, senão a prevista
       if (ob) o.tendAj = o.prev && +o.prev.slice(5, 7) >= 8 && o.prev.slice(0, 4) === '2026' ? o.prev : o.tend;
       return o;
     });
@@ -1067,20 +1068,20 @@ body{background:#eef2f8}
     fillCascade(selOB, selOB, allO);
     const F = applyF(allO, selOB);
     const n = F.length, real = F.filter((r) => r.real).length, and = F.filter((r) => r.andam).length, ne = n - real - F.filter((r) => r.tram).length; // não emitidos = total − aprovados − em trâmite
-    const plan = F.filter((r) => leM(r.prev, ref)).length, apr = F.filter((r) => r.real && leM(r.tend, ref)).length;
+    const plan = F.filter((r) => leM(r.plano, ref)).length, apr = F.filter((r) => r.real && leM(r.tend, ref)).length;
     setText('ko-total', fmt(n)); setText('ko-real', fmt(real)); setText('ko-real-p', pct(real / n) + ' do total'); setText('ko-and', fmt(and));
     setText('ko-ne', fmt(ne)); setText('ko-ne-p', pct(ne / n) + ' do total'); setText('ko-plan', fmt(plan)); setText('ko-plan-n', 'previstos até ' + mLab(ref));
     setText('ab-take', n ? `Documentos obrigatórios: ${fmt(real)} de ${fmt(n)} aprovados (${pct(real / n)}). Aderência: ${pct(real / n)} contra meta de 80%.` : 'Nenhum documento obrigatório com os filtros atuais.');
     const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
     const semData = F.length - FC.length;
     $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
-    const last = d3.max(FC, (r) => Math.max(mIdx(r.prev) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
+    const last = d3.max(FC, (r) => Math.max(mIdx(r.plano) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
     const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
     const series = [
-      { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.prev) },
+      { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
       ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendAj) }] : []),
       { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
-      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FC, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
+      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FC, idxs, (r) => r.plano, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
     setText('h-omes', 'Emissões em ' + mLab(ref));
@@ -1096,7 +1097,7 @@ body{background:#eef2f8}
     lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: hC });
     setText('h-oemp', 'Planejado x emitido por empresa até ' + mLab(ref));
     const re = d3.rollups(F, (v) => {
-      const pl = v.filter((r) => leM(r.prev, ref)).length, ap = v.filter((r) => r.real && leM(r.tend, ref)).length, tr = v.filter((r) => r.tram && leM(r.cdoc, ref)).length;
+      const pl = v.filter((r) => leM(r.plano, ref)).length, ap = v.filter((r) => r.real && leM(r.tend, ref)).length, tr = v.filter((r) => r.tram && leM(r.cdoc, ref)).length;
       return { e: v[0].emp || '(sem empresa)', total: v.length, plan: pl, apr: ap, tram: tr, ne: v.length - ap - tr, ad: v.length ? ap / v.length : null }; // aderência = aprovados ÷ total; não emitidos = total − aprovados − em trâmite
     }, (r) => r.emp).map((x) => x[1]);
     const s2 = (k) => d3.sum(re, (r) => r[k]);
