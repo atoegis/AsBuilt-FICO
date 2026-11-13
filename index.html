@@ -1068,13 +1068,14 @@ body{background:#eef2f8}
     setText('ko-total', fmt(n)); setText('ko-real', fmt(real)); setText('ko-real-p', pct(real / n) + ' do total'); setText('ko-and', fmt(and));
     setText('ko-ne', fmt(ne)); setText('ko-ne-p', pct(ne / n) + ' do total'); setText('ko-plan', fmt(plan)); setText('ko-plan-n', 'previstos até ' + mLab(ref));
     setText('ab-take', n ? `Documentos obrigatórios: ${fmt(real)} de ${fmt(n)} aprovados (${pct(real / n)}). Aderência: ${pct(real / n)} contra meta de 80%.` : 'Nenhum documento obrigatório com os filtros atuais.');
-    const last = d3.max(F, (r) => Math.max(mIdx(r.prev) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
+    const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
+    const last = d3.max(FC, (r) => Math.max(mIdx(r.prev) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
     const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
     const series = [
-      { name: 'Planejado', color: 'var(--ink)', values: cumul(F, idxs, (r) => r.prev) },
-      ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(F, idxs, (r) => r.tendAj) }] : []),
-      { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
-      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
+      { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.prev) },
+      ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendAj) }] : []),
+      { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
+      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FC, idxs, (r) => r.prev, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
     setText('h-omes', 'Emissões em ' + mLab(ref));
