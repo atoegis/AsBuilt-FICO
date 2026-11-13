@@ -379,7 +379,7 @@ body{background:#eef2f8}
     <div class="ab-kpis" data-source="obrigatorios">
       <div class="ab-kpi"><span class="k">Documentos obrigatórios</span><span class="v" id="ko-total">—</span><span class="n">na base</span></div>
       <div class="ab-kpi" style="--kc:var(--good)"><span class="k">Aprovados</span><span class="v" id="ko-real">—</span><span class="n" id="ko-real-p">—</span></div>
-      <div class="ab-kpi" style="--kc:var(--orange)"><span class="k">Em andamento</span><span class="v" id="ko-and">—</span><span class="n">pendente CDOC ou Vale</span></div>
+      <div class="ab-kpi" style="--kc:var(--orange)"><span class="k">Em análise</span><span class="v" id="ko-and">—</span><span class="n">pendente CDOC ou Vale</span></div>
       <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Não emitidos</span><span class="v" id="ko-ne">—</span><span class="n" id="ko-ne-p">—</span></div>
       <div class="ab-kpi" style="--kc:var(--navy)"><span class="k">Planejado até o mês</span><span class="v" id="ko-plan">—</span><span class="n" id="ko-plan-n">—</span></div>
     </div>
@@ -938,7 +938,7 @@ body{background:#eef2f8}
     const lines = [
       ['Emitidos', mm.filter((r) => r.emit).length, rows.filter((r) => r.emit).length],
       ['Reprovados', mm.filter((r) => r.recus).length, rows.filter((r) => r.recus).length, 'var(--bad)'],
-      ['Em andamento', mm.filter((r) => r.andam).length, rows.filter((r) => r.andam).length, 'var(--orange)'],
+      ['Em análise', mm.filter((r) => r.andam).length, rows.filter((r) => r.andam).length, 'var(--orange)'],
       ['Aprovados', mm.filter((r) => r.real).length, rows.filter((r) => r.real).length, 'var(--good)']
     ];
     table(box, [
