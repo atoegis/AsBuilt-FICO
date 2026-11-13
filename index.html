@@ -90,6 +90,9 @@ body{background:#eef2f8}
 .ab-btn:hover{border-color:var(--blue)}
 .ab-semdata{display:inline-block;font-size:13px;font-weight:600;color:var(--warn);background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:20px;padding:4px 12px;margin-left:auto;margin-right:12px;white-space:nowrap}
 .ab-semdata b{font-weight:800}
+.ab-memo{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px dashed var(--line);font-size:13px;line-height:1.6;color:var(--ink-mid)}
+.ab-memo b{color:var(--ink)}
+.ab-memo:empty{display:none}
 .ab-semdata:empty{display:none}
 .ab-btn-img{background:var(--blue);border-color:var(--blue);color:#fff}
 .ab-btn-img:hover{background:var(--navy);border-color:var(--navy)}
@@ -409,6 +412,7 @@ body{background:#eef2f8}
       <div class="ab-card" id="card-oemp">
         <h3 id="h-oemp">Planejado x emitido por empresa</h3>
         <div class="ab-scroll" id="t-oemp" data-source="obrigatorios"></div>
+        <p class="ab-memo" id="m-oemp"></p>
       </div>
     </div>
   </section>
@@ -1103,6 +1107,12 @@ body{background:#eef2f8}
     const s2 = (k) => d3.sum(re, (r) => r[k]);
     table($('t-oemp'), [{ k: 'e', label: 'Empresa' }, { k: 'total', label: 'Total', num: true, fmt }, { k: 'plan', label: 'Planejado', num: true, fmt }, { k: 'apr', label: 'Aprovados', num: true, fmt }, { k: 'tram', label: 'Em trâmite', num: true, fmt }, { k: 'ne', label: 'Não emitidos', num: true, fmt }, { k: 'ad', label: 'Aderência', num: true, fmt: pct }],
       re, { sort: 'plan', dir: -1, total: { e: 'Total', total: s2('total'), plan: s2('plan'), apr: s2('apr'), tram: s2('tram'), ne: s2('ne'), ad: s2('total') ? s2('apr') / s2('total') : null } });
+    { // memória de cálculo do em trâmite (mesmo recorte da tabela: ação do CDOC até o mês de referência)
+      const ate = F.filter((r) => leM(r.cdoc, ref)), rp = ate.filter((r) => r.recus).length, an = ate.filter((r) => r.andam).length;
+      $('m-oemp').innerHTML = F.length ? `<b>Memória de cálculo</b><br>Em trâmite = Reprovados + Em análise = ${fmt(rp)} + ${fmt(an)} = <b>${fmt(s2('tram'))}</b><br>`
+        + `Não emitidos = Total − Aprovados − Em trâmite = ${fmt(s2('total'))} − ${fmt(s2('apr'))} − ${fmt(s2('tram'))} = <b>${fmt(s2('ne'))}</b><br>`
+        + `Aderência = Aprovados ÷ Total = ${fmt(s2('apr'))} ÷ ${fmt(s2('total'))} = <b>${pct(s2('total') ? s2('apr') / s2('total') : null)}</b>` : '';
+    }
   }
 
   // ================= MAPA DE AVANÇO =================
