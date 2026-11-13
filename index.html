@@ -708,7 +708,7 @@ body{background:#eef2f8}
     const max = d3.max(series, (s) => d3.max(s.values)) || 1;
     const y = d3.scaleLinear([0, max], [H - 26, 14]).nice();
     const lw = measure(svg, y.ticks(5).map(fmt)) + 10;
-    const x = d3.scalePoint(idxs, [lw + 4, W - 8]);
+    const x = d3.scalePoint(idxs, [lw + 4, W - 24]); // margem à direita para o último rótulo de mês não cortar
     for (const t of y.ticks(5)) {
       svg.append('line').attr('x1', lw).attr('x2', W).attr('y1', y(t)).attr('y2', y(t)).style('stroke', 'var(--grid)');
       svg.append('text').attr('class', 'ab-tick').attr('x', lw - 6).attr('y', y(t)).attr('dy', '.32em').attr('text-anchor', 'end').text(fmt(t));
@@ -1077,8 +1077,10 @@ body{background:#eef2f8}
     const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
     const semData = F.length - FC.length;
     $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
-    const last = d3.max(FC, (r) => Math.max(mIdx(r.plano) || 0, mIdx(r.tendAj) || 0)) || TODAY_M;
-    const idxs = range(OB0, Math.min(2027 * 12 + 11, Math.max(Math.floor(last / 12) * 12 + 11, ref)));
+    // eixo de meses adaptativo: do primeiro ao último mês com dado no filtro (sempre incluindo o mês de referência; início não antes de jun/26)
+    const mesesF = [...FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendAj), r.real ? mIdx(r.cdoc) : null]), ...F.filter((r) => r.tram).map((r) => mIdx(r.cdoc))].filter((m) => m != null);
+    const ini = Math.max(OB0, Math.min(d3.min(mesesF) ?? ref, ref)), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesF) ?? ref, ref));
+    const idxs = range(ini, fim);
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
       ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendAj) }] : []),
