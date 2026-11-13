@@ -1081,7 +1081,7 @@ body{background:#eef2f8}
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
       ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendAj) }] : []),
       { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
-      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FC, idxs, (r) => r.plano, (r) => r.tram), idxs, ref) }
+      { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
     setText('h-omes', 'Emissões em ' + mLab(ref));
