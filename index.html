@@ -91,7 +91,7 @@ body{background:#eef2f8}
 .ab-semdata{display:inline-block;font-size:13px;font-weight:600;color:var(--warn);background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:20px;padding:4px 12px;margin-left:auto;margin-right:12px;white-space:nowrap}
 .ab-semdata b{font-weight:800}
 .ab-semdata:empty{display:none}
-#t-oemp .ab-table th{white-space:normal;vertical-align:bottom}
+#t-oemp .ab-table th{white-space:pre-line;vertical-align:bottom}
 #t-oemp .ab-table th .ab-th{line-height:1.35}
 .ab-btn-img{background:var(--blue);border-color:var(--blue);color:#fff}
 .ab-btn-img:hover{background:var(--navy);border-color:var(--navy)}
@@ -1103,7 +1103,7 @@ body{background:#eef2f8}
       return { e: v[0].emp || '(sem empresa)', total: v.length, plan: pl, apr: ap, tram: tr, ne: v.length - ap - tr, ad: v.length ? ap / v.length : null }; // aderência = aprovados ÷ total; não emitidos = total − aprovados − em trâmite
     }, (r) => r.emp).map((x) => x[1]);
     const s2 = (k) => d3.sum(re, (r) => r[k]);
-    table($('t-oemp'), [{ k: 'e', label: 'Empresa' }, { k: 'total', label: 'Total', num: true, fmt }, { k: 'plan', label: 'Planejado', num: true, fmt }, { k: 'apr', label: 'Aprovados', num: true, fmt }, { k: 'tram', label: 'Em trâmite = Reprovados + Em análise', num: true, fmt }, { k: 'ne', label: 'Não emitidos', num: true, fmt }, { k: 'ad', label: 'Aderência', num: true, fmt: pct }],
+    table($('t-oemp'), [{ k: 'e', label: 'Empresa' }, { k: 'total', label: 'Total', num: true, fmt }, { k: 'plan', label: 'Planejado', num: true, fmt }, { k: 'apr', label: 'Aprovados', num: true, fmt }, { k: 'tram', label: 'Em trâmite\n= Reprovados +\nEm análise', num: true, fmt }, { k: 'ne', label: 'Não emitidos', num: true, fmt }, { k: 'ad', label: 'Aderência', num: true, fmt: pct }],
       re, { sort: 'plan', dir: -1, total: { e: 'Total', total: s2('total'), plan: s2('plan'), apr: s2('apr'), tram: s2('tram'), ne: s2('ne'), ad: s2('total') ? s2('apr') / s2('total') : null } });
   }
 
