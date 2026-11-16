@@ -263,6 +263,38 @@ body{background:#eef2f8}
 .ab-strip svg{display:block}
 .ab-tick{font-size:12px;fill:var(--ink-soft);font-family:var(--f-body)}
 .ab-lab{font-size:12px;font-weight:700;fill:var(--ink);font-family:var(--f-body)}
+
+/* ---------- layout editável ---------- */
+.ab-lay{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch;margin-top:0}
+.ab-lay>.ab-card{grid-column:span var(--span,6)!important;position:relative;box-sizing:border-box}
+@media (max-width:900px){.ab-lay>.ab-card{grid-column:1/-1!important}}
+.ab-lay>.ab-card[data-h]{overflow:hidden}
+.ab-lay>.ab-card[data-h]>.ab-chart,.ab-lay>.ab-card[data-h]>.ab-scroll,.ab-lay>.ab-card[data-h]>.ab-strip,.ab-lay>.ab-card[data-h]>.ab-gauges{flex:1 1 0;min-height:0;overflow:auto;max-height:none}
+.ab-lay>.ab-card[data-h]>.ab-chart{min-height:120px}
+.ab-lay>.ab-mapcard[data-h]>.ab-map{flex:1 1 0;min-height:0}
+.ab-lay>.ab-fitrow{box-sizing:border-box;height:0;min-height:100%;max-height:none;overflow:auto}
+#card-omes,#card-oader{min-height:22rem}
+.ab-tab-edit{margin-left:auto;background:transparent;border-style:dashed}
+.ab-tab-edit[aria-pressed=true]{background:var(--orange);border-color:var(--orange);border-style:solid;color:#fff}
+.ab-editbar{display:none;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 14px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--orange) 12%,var(--paper));border:1px dashed var(--orange);font-size:14px;color:var(--ink)}
+.ab-editbar span{flex:1;min-width:16rem}
+.ab-editing .ab-editbar{display:flex}
+.ab-lh{display:none;position:absolute;z-index:6}
+.ab-editing .ab-lay>.ab-card{outline:2px dashed color-mix(in srgb,var(--orange) 70%,transparent);outline-offset:3px;padding-top:42px}
+.ab-editing{user-select:none}
+.ab-editing .ab-mapcard>.ab-mapov{display:none}
+.ab-editing .ab-lay>.ab-card .ab-lh{display:flex}
+.ab-lh-move{top:0;left:0;right:0;height:30px;align-items:center;justify-content:center;gap:6px;cursor:grab;background:color-mix(in srgb,var(--orange) 88%,transparent);color:#fff;font-size:12.5px;font-weight:700;border-radius:12px 12px 0 0;user-select:none;touch-action:none}
+.ab-lh-move:active{cursor:grabbing}
+.ab-lh-w{top:30px;right:0;bottom:16px;width:12px;cursor:ew-resize;touch-action:none}
+.ab-lh-h{left:14px;right:16px;bottom:0;height:12px;cursor:ns-resize;touch-action:none}
+.ab-lh-wh{right:0;bottom:0;width:16px;height:16px;border-radius:4px 0 12px 0;background:var(--orange);cursor:nwse-resize;touch-action:none}
+.ab-lh-w::after,.ab-lh-h::after{content:"";position:absolute;background:var(--orange);border-radius:3px}
+.ab-lh-w::after{top:50%;left:4px;width:4px;height:44px;margin-top:-22px}
+.ab-lh-h::after{left:50%;top:4px;height:4px;width:44px;margin-left:-22px}
+.ab-lh-size{top:5px;right:12px;z-index:7;padding:2px 8px;border-radius:10px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:700}
+.ab-lay>.ab-card.ab-dragging{opacity:.45}
+.ab-editing .ab-lay>.ab-card>*:not(.ab-lh){pointer-events:none}
 </style>
 
 <div class="ab" id="ab">
@@ -283,9 +315,11 @@ body{background:#eef2f8}
     <button class="ab-tab" role="tab" data-tab="contratadas" id="tab-contratadas"><span class="tnum">2</span>Contratadas</button>
     <button class="ab-tab" role="tab" data-tab="obrigatorios" id="tab-obrigatorios"><span class="tnum">3</span>Documentos obrigatórios</button>
     <button class="ab-tab" role="tab" data-tab="mapa" id="tab-mapa"><span class="tnum">4</span>Mapa de avanço</button>
+    <button class="ab-tab ab-tab-edit ab-noexp" type="button" id="ab-edit" aria-pressed="false" title="Mover e redimensionar os quadros desta página">✎ Editar layout</button>
   </nav>
 
   <div class="ab-wrap">
+  <div class="ab-editbar ab-noexp" id="ab-editbar"><span><b>Modo de edição.</b> Arraste a faixa laranja para mover um quadro. Puxe a borda direita para mudar a largura e a borda de baixo para mudar a altura (duplo clique na borda de baixo volta à altura automática).</span><button class="ab-btn" id="ab-lay-reset" type="button">Restaurar padrão desta aba</button><button class="ab-btn ab-btn-img" id="ab-lay-done" type="button">Concluir</button></div>
   <div class="ab-filters" id="ab-filters-bd">
     <label>Empresa responsável<select id="f-emp" data-p="emp" data-k="emp"></select></label>
     <label>Lote<select id="f-lote" data-p="lote" data-k="lote"></select></label>
@@ -623,6 +657,8 @@ body{background:#eef2f8}
   function legend(box, keys, colorOf, cls) {
     box.replaceChildren(...keys.map((k) => { const s = el('span'); const i = el('i', cls ? cls(k) : ''); i.style.background = colorOf(k); if (cls && cls(k).includes('dash')) i.style.color = colorOf(k); s.append(i, document.createTextNode(k)); return s; }));
   }
+  // altura disponível quando o quadro tem altura definida no layout editável
+  const fillH = (box, def) => { const c = box.closest('.ab-card'); return c && c.dataset.h && box.clientHeight > 100 ? Math.round(box.clientHeight - 6) : def; };
   function svgFor(box, W, H) {
     box.replaceChildren();
     return d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img');
@@ -681,7 +717,7 @@ body{background:#eef2f8}
 
   function monthBars(box, idxs, vals) {
     box.classList.remove('dash-skeleton');
-    const W = Math.max(280, box.clientWidth || 600), H = 220;
+    const W = Math.max(280, box.clientWidth || 600), H = fillH(box, 220);
     const svg = svgFor(box, W, H);
     const max = d3.max(vals) || 1;
     const y = d3.scaleLinear([0, max], [H - 24, 16]).nice();
@@ -703,7 +739,7 @@ body{background:#eef2f8}
 
   function lineChart(box, idxs, series, cutM, opt = {}) {
     box.classList.remove('dash-skeleton');
-    const W = Math.max(300, box.clientWidth || 800), H = opt.h || 340;
+    const W = Math.max(300, box.clientWidth || 800), H = fillH(box, opt.h || 340);
     const svg = svgFor(box, W, H);
     const max = d3.max(series, (s) => d3.max(s.values)) || 1;
     const y = d3.scaleLinear([0, max], [H - 26, 14]).nice();
@@ -952,7 +988,7 @@ body{background:#eef2f8}
 
   // ---------- desenho ----------
   let tab = 'visao';
-  const tabs = [...document.querySelectorAll('.ab-tab')];
+  const tabs = [...document.querySelectorAll('.ab-tab[data-tab]')];
   function showTab(t, link) {
     tab = t;
     tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
@@ -1097,7 +1133,8 @@ body{background:#eef2f8}
     const lado = $('card-ocurva').offsetTop === $('card-oativo').offsetTop;
     const svgA = $('c-oativo').querySelector('svg'), hA = svgA ? svgA.getBoundingClientRect().height : 0;
     const topo = (c, k) => $(k).getBoundingClientRect().top - $(c).getBoundingClientRect().top; // altura do cabeçalho de cada quadro
-    const hC = lado ? Math.max(400, Math.round(hA + topo('card-oativo', 'c-oativo') - topo('card-ocurva', 'c-ocurva'))) : 400;
+    const alvoA = $('card-oativo').dataset.h ? +$('card-oativo').dataset.h - 21 : hA + topo('card-oativo', 'c-oativo'); // altura útil do quadro de ativos
+    const hC = lado ? Math.max($('card-oativo').dataset.h ? 200 : 400, Math.round(alvoA - topo('card-ocurva', 'c-ocurva'))) : 400;
     lineChart($('c-ocurva'), idxs, series, ref, { labels: true, h: hC });
     setText('h-oemp', 'Planejado x emitido por empresa até ' + mLab(ref));
     const re = d3.rollups(F, (v) => {
@@ -1606,6 +1643,118 @@ body{background:#eef2f8}
   }
 
   const start = location.hash.slice(1);
+
+  // ================= LAYOUT EDITÁVEL (mover / largura / altura dos quadros, salvo neste navegador) =================
+  const LAY_KEY = 'ab-layout-v1';
+  const LAY_DEF = {
+    visao: [['card-gauges', 6], ['card-concl', 6], ['card-disc', 12], ['card-pac', 12], ['card-ativo', 12]],
+    contratadas: [['card-emp', 6], ['card-resumo', 6], ['card-tram', 12]],
+    obrigatorios: [['card-ocurva', 6], ['card-oativo', 6], ['card-omes', 3], ['card-oader', 3], ['card-oemp', 6]],
+    mapa: [['card-seglist', 3], ['card-map', 6], ['m-detail', 3], ['card-strip', 12], ['card-mdocs', 12]]
+  };
+  const layLoad = () => { try { return JSON.parse(localStorage.getItem(LAY_KEY)) || {}; } catch (e) { return {}; } };
+  const laySave = (o) => { try { localStorage.setItem(LAY_KEY, JSON.stringify(o)); } catch (e) { /* sem armazenamento: vale só nesta visita */ } };
+  const lays = {};
+  function addHandles(c) {
+    const hs = [['ab-lh ab-lh-move ab-noexp', '⠿ mover'], ['ab-lh ab-lh-w ab-noexp', ''], ['ab-lh ab-lh-h ab-noexp', ''], ['ab-lh ab-lh-wh ab-noexp', ''], ['ab-lh ab-lh-size ab-noexp', (c.dataset.span || '') && c.dataset.span + '/12']];
+    for (const [cl, t] of hs) { const h = el('div', cl); h.textContent = t; c.append(h); }
+  }
+  for (const pg of Object.keys(LAY_DEF)) { // troca os grids fixos de cada aba por um grid único de 12 colunas
+    const page = $(pg), cards = LAY_DEF[pg].map(([id]) => $(id)).filter(Boolean);
+    if (!cards.length) continue;
+    const g = el('div', 'ab-lay'); g.dataset.page = pg;
+    let top = cards[0]; while (top.parentElement !== page) top = top.parentElement;
+    page.insertBefore(g, top);
+    for (const c of cards) {
+      const old = c.parentElement; g.append(c); c.classList.remove('wide');
+      for (let o = old; o && o !== page && !o.children.length; ) { const up = o.parentElement; o.remove(); o = up; }
+      addHandles(c);
+      new MutationObserver(() => { if (!c.querySelector(':scope>.ab-lh-move')) addHandles(c); }).observe(c, { childList: true }); // quadros redesenhados por inteiro (ex.: detalhe do mapa)
+    }
+    lays[pg] = g;
+  }
+  function layApply(pg) {
+    const g = lays[pg]; if (!g) return;
+    const saved = layLoad()[pg] || [], def = LAY_DEF[pg];
+    const known = new Set(def.map(([id]) => id));
+    const order = [...saved.filter((x) => known.has(x.id)), ...def.filter(([id]) => !saved.some((x) => x.id === id)).map(([id, sp]) => ({ id, s: sp }))];
+    for (const it of order) {
+      const c = $(it.id); if (!c) continue;
+      g.append(c);
+      const sp = Math.max(2, Math.min(12, it.s || def.find(([id]) => id === it.id)[1]));
+      c.style.setProperty('--span', sp); c.dataset.span = sp;
+      if (it.h) { c.style.height = it.h + 'px'; c.dataset.h = it.h; } else { c.style.height = ''; delete c.dataset.h; }
+      const lab = c.querySelector('.ab-lh-size'); if (lab) lab.textContent = sp + '/12';
+    }
+  }
+  function layStore(pg) {
+    const o = layLoad();
+    o[pg] = [...lays[pg].children].filter((c) => c.classList.contains('ab-card')).map((c) => ({ id: c.id, s: +c.dataset.span || 6, ...(c.dataset.h ? { h: +c.dataset.h } : {}) }));
+    laySave(o);
+  }
+  function fitRows() { // listas do mapa acompanham a altura do mapa quando estão na mesma linha
+    const m = $('card-map'); if (!m || $('mapa').hidden) return;
+    for (const id of ['card-seglist', 'm-detail']) {
+      const c = $(id); if (!c) continue;
+      c.classList.remove('ab-fitrow');
+      const same = !c.dataset.h && Math.abs(c.offsetTop - m.offsetTop) < 4 && window.innerWidth > 900;
+      c.classList.toggle('ab-fitrow', same);
+    }
+  }
+  const relayout = () => { fitRows(); draw(); requestAnimationFrame(fitRows); };
+  Object.keys(lays).forEach(layApply);
+  tabs.forEach((b) => b.addEventListener('click', () => requestAnimationFrame(fitRows)));
+  window.addEventListener('resize', (() => { let t; return () => { clearTimeout(t); t = setTimeout(relayout, 250); }; })());
+
+  // modo de edição
+  const abRoot = $('ab'), btnEd = $('ab-edit');
+  const setEdit = (on) => { abRoot.classList.toggle('ab-editing', on); btnEd.setAttribute('aria-pressed', String(on)); btnEd.textContent = on ? '✓ Concluir edição' : '✎ Editar layout'; };
+  btnEd.addEventListener('click', () => setEdit(!abRoot.classList.contains('ab-editing')));
+  $('ab-lay-done').addEventListener('click', () => setEdit(false));
+  $('ab-lay-reset').addEventListener('click', () => { const o = layLoad(); delete o[tab]; laySave(o); layApply(tab); relayout(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && abRoot.classList.contains('ab-editing')) setEdit(false); });
+
+  abRoot.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.ab-lh'); if (!h || !abRoot.classList.contains('ab-editing')) return;
+    const card = h.closest('.ab-card'), g = card.parentElement, pg = g.dataset.page; if (!pg) return;
+    e.preventDefault();
+    const x0 = e.clientX, y0 = e.clientY, sp0 = +card.dataset.span || 6, h0 = card.getBoundingClientRect().height;
+    const gap = parseFloat(getComputedStyle(g).columnGap) || 18, colW = (g.clientWidth + gap) / 12;
+    const mode = h.classList.contains('ab-lh-move') ? 'move' : h.classList.contains('ab-lh-w') ? 'w' : h.classList.contains('ab-lh-h') ? 'h' : h.classList.contains('ab-lh-wh') ? 'wh' : null;
+    if (!mode) return;
+    if (mode === 'move') card.classList.add('ab-dragging');
+    const lab = card.querySelector('.ab-lh-size');
+    const mv = (ev) => {
+      if (mode === 'move') {
+        const t = document.elementsFromPoint(ev.clientX, ev.clientY).map((n) => n.closest && n.closest('.ab-lay>.ab-card')).find((c) => c && c !== card && c.parentElement === g);
+        if (!t) return;
+        const r = t.getBoundingClientRect();
+        const depois = (ev.clientY > r.bottom - r.height * 0.25) || (ev.clientY >= r.top + r.height * 0.25 && ev.clientX > r.left + r.width / 2);
+        const ref = depois ? t.nextElementSibling : t;
+        if (ref !== card && card.nextElementSibling !== ref) g.insertBefore(card, ref);
+        return;
+      }
+      if (mode === 'w' || mode === 'wh') {
+        const sp = Math.max(2, Math.min(12, Math.round(sp0 + (ev.clientX - x0) / colW)));
+        card.style.setProperty('--span', sp); card.dataset.span = sp; if (lab) lab.textContent = sp + '/12';
+      }
+      if (mode === 'h' || mode === 'wh') {
+        const hh = Math.max(160, Math.round(h0 + ev.clientY - y0));
+        card.style.height = hh + 'px'; card.dataset.h = hh;
+      }
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      card.classList.remove('ab-dragging');
+      layStore(pg); relayout();
+    };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); // na janela: o quadro muda de lugar durante o arraste
+  });
+  abRoot.addEventListener('dblclick', (e) => {
+    const h = e.target.closest('.ab-lh-h, .ab-lh-wh'); if (!h || !abRoot.classList.contains('ab-editing')) return;
+    const card = h.closest('.ab-card'); card.style.height = ''; delete card.dataset.h; layStore(card.parentElement.dataset.page); relayout();
+  });
+
   showTab(['visao', 'contratadas', 'obrigatorios', 'mapa'].includes(start) ? start : 'visao', false);
   dash.onData(draw);
 })();
