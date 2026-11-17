@@ -705,6 +705,13 @@ body{background:#eef2f8}
   }
   const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 
+  // cor clara? (para escolher texto escuro ou branco dentro da barra)
+  const corClara = (c) => {
+    const m = /var\((--[\w-]+)\)/.exec(c); if (m) c = getComputedStyle($('ab')).getPropertyValue(m[1]).trim() || c;
+    const h = /^#([0-9a-f]{6})$/i.exec(c); if (!h) return false;
+    const n = parseInt(h[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 165;
+  };
   function hbars(box, rows, keys, colorOf, opt = {}) {
     box.classList.remove('dash-skeleton');
     if (!rows.length) { box.replaceChildren(el('div', 'ab-empty', 'Nenhum documento com os filtros atuais.')); return; }
@@ -727,6 +734,11 @@ body{background:#eef2f8}
         const v = d.v[k] || 0; if (!v) continue;
         const w = x(v) - x(0);
         sel.append('rect').attr('x', x0).attr('y', 3).attr('width', Math.max(0, w - (w > 3 ? 1 : 0))).attr('height', rowH - 10).attr('rx', 2).style('fill', colorOf(k));
+        if (opt.inner && w >= String(fmt(v)).length * 7 + 8 && rowH >= 20) { // valor do status dentro do segmento, quando cabe
+          sel.append('text').attr('x', x0 + w / 2).attr('y', rowH / 2 - 2).attr('dy', '.32em').attr('text-anchor', 'middle')
+            .style('font-size', '11.5px').style('font-weight', 700).style('pointer-events', 'none')
+            .style('fill', corClara(colorOf(k)) ? 'var(--ink)' : '#fff').text(fmt(v));
+        }
         x0 += w;
       }
       sel.append('text').attr('class', 'ab-lab').attr('x', x0 + 4).attr('y', rowH / 2 - 2).attr('dy', '.32em').text(fmt(d.total));
@@ -1111,7 +1123,7 @@ body{background:#eef2f8}
           }
           empRows = linhas;
         } else empRows = groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 });
-        hbars($('c-emp'), empRows, SDK, sdC);
+        hbars($('c-emp'), empRows, SDK, sdC, { inner: true });
         setText('t-emp', soObrig ? 'Status do As Built por empresa e ativo' : 'Status do As Built por empresa');
 
         // resumo por empresa, pelo Status do As Built
@@ -1135,7 +1147,7 @@ body{background:#eef2f8}
             const svgE = $('c-emp').querySelector('svg'), tb = $('t-resumo').querySelector('table');
             const topoE = $('c-emp').getBoundingClientRect().top - cE.getBoundingClientRect().top, topoR = $('t-resumo').getBoundingClientRect().top - cR.getBoundingClientRect().top;
             const natE = topoE + (svgE ? svgE.getBoundingClientRect().height : 0), natR = cR.dataset.h ? +cR.dataset.h - 21 : topoR + (tb ? tb.offsetHeight : 0);
-            if (natR > natE + 4) hbars($('c-emp'), empRows, SDK, sdC, { h: natR - topoE }); // tabela maior: barras se espaçam
+            if (natR > natE + 4) hbars($('c-emp'), empRows, SDK, sdC, { h: natR - topoE, inner: true }); // tabela maior: barras se espaçam
             else if (tb && natE > natR + 4 && !cR.dataset.h) tb.style.height = Math.round(natE - topoR) + 'px'; // gráfico maior: linhas da tabela se espaçam
           }
         }
