@@ -1113,9 +1113,10 @@ body{background:#eef2f8}
     const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
     const semData = F.length - FC.length;
     $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
-    // eixo de meses adaptativo: do primeiro ao último mês com dado no filtro (sempre incluindo o mês de referência; início não antes de jun/26)
-    const mesesF = [...FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendAj), r.real ? mIdx(r.cdoc) : null]), ...F.filter((r) => r.tram).map((r) => mIdx(r.cdoc))].filter((m) => m != null);
-    const ini = Math.max(OB0, Math.min(d3.min(mesesF) ?? ref, ref)), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesF) ?? ref, ref));
+    // eixo de meses: começa no primeiro mês do Realizado (aprovados, pela ação do CDOC) e termina no fim do Planejado/Tendência; sempre inclui o mês de referência
+    const mesesR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
+    const mesesP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendAj)]).filter((m) => m != null);
+    const ini = Math.min(d3.min(mesesR) ?? d3.min(mesesP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesP) ?? ref, d3.max(mesesR) ?? ref, ref));
     const idxs = range(ini, fim);
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
