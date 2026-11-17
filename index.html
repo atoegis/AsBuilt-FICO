@@ -294,10 +294,15 @@ body{background:#eef2f8}
 .ab-lay>.ab-card.ab-dragging{opacity:.45}
 .ab-editing .ab-lay>.ab-card>*:not(.ab-lh){pointer-events:none}
 
-.ab-kebab{position:relative;margin-right:4px}
+.ab-kebab{position:relative;margin-left:8px;flex:none}
+#card-ocurva>.ab-tools{flex-wrap:nowrap}
+#card-ocurva>.ab-tools h3{white-space:nowrap}
+#card-ocurva .ab-semdata,#card-ocurva .ab-per{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#card-ocurva .ab-semdata{margin-left:12px;margin-right:0}
+#card-ocurva .ab-per:empty+.ab-kebab{margin-left:auto}
 .ab-kebab-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:20px;line-height:1;font-weight:800;cursor:pointer;display:grid;place-items:center}
 .ab-kebab-btn:hover,.ab-kebab-btn[aria-expanded=true]{border-color:var(--blue);color:var(--blue)}
-.ab-kebab-pop{position:absolute;left:0;top:36px;z-index:20;min-width:240px;padding:12px 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line);box-shadow:0 10px 30px rgba(10,30,60,.18);display:flex;flex-direction:column;gap:10px}
+.ab-kebab-pop{position:absolute;right:0;top:36px;z-index:20;min-width:240px;padding:12px 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line);box-shadow:0 10px 30px rgba(10,30,60,.18);display:flex;flex-direction:column;gap:10px}
 .ab-kebab-pop[hidden]{display:none}
 .ab-kebab-pop label:not(.ab-toggle){display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink-mid)}
 .ab-kebab-pop select{font:inherit;font-weight:500;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);min-width:9rem}
@@ -433,14 +438,14 @@ body{background:#eef2f8}
     </div>
     <div class="ab-ogrid">
       <div class="ab-card" id="card-ocurva">
-        <div class="ab-tools"><div class="ab-kebab ab-noexp"><button class="ab-kebab-btn" type="button" id="o-menu-btn" aria-haspopup="true" aria-expanded="false" title="Opções do gráfico">⋮</button><div class="ab-kebab-pop" id="o-menu" hidden>
+        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><span class="ab-per" id="o-per"></span><div class="ab-kebab ab-noexp"><button class="ab-kebab-btn" type="button" id="o-menu-btn" aria-haspopup="true" aria-expanded="false" title="Opções do gráfico">⋮</button><div class="ab-kebab-pop" id="o-menu" hidden>
           <p class="ab-kebab-t">Período do gráfico</p>
           <label>Início<select id="o-ini"></select></label>
           <label>Fim<select id="o-fim"></select></label>
           <button class="ab-btn" type="button" id="o-per-auto">Período automático</button>
           <hr>
           <label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label>
-        </div></div><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><span class="ab-per" id="o-per"></span></div>
+        </div></div></div>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
       </div>
@@ -1173,7 +1178,7 @@ body{background:#eef2f8}
     let iniU = oPer.ini ? mIdx(oPer.ini) : ini, fimU = oPer.fim ? mIdx(oPer.fim) : fim;
     if (iniU > fimU) [iniU, fimU] = [fimU, iniU];
     if (fimU - iniU < 1) fimU = iniU + 1;
-    setText('o-per', oPer.ini || oPer.fim ? 'Período: ' + mLab(iniU) + ' a ' + mLab(fimU) : '');
+    setText('o-per', oPer.ini || oPer.fim ? mLab(iniU) + ' – ' + mLab(fimU) : ''); $('o-per').title = 'Período escolhido no menu ⋮';
     const idxs = range(iniU, fimU);
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
