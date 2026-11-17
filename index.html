@@ -107,8 +107,6 @@ body{background:#eef2f8}
 .ab-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:stretch}
 .ab-grid>.ab-card{grid-column:span 6}
 #card-gauges{grid-column:span 4}#card-concl{grid-column:span 8}
-#card-emp .ab-chart{max-height:30rem;overflow-y:auto;overflow-x:hidden}
-#card-resumo .ab-scroll{max-height:32rem}
 #card-resumo th .ab-th,#card-resumo td{padding-left:6px;padding-right:6px}#card-resumo td{font-size:13.5px}#card-resumo th .ab-th{font-size:11px;letter-spacing:.03em}
 #card-concl .ab-chart{flex:1}
 .ab-card{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:14px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -295,6 +293,20 @@ body{background:#eef2f8}
 .ab-lh-size{top:5px;right:12px;z-index:7;padding:2px 8px;border-radius:10px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:700}
 .ab-lay>.ab-card.ab-dragging{opacity:.45}
 .ab-editing .ab-lay>.ab-card>*:not(.ab-lh){pointer-events:none}
+
+.ab-kebab{position:relative;margin-right:4px}
+.ab-kebab-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:20px;line-height:1;font-weight:800;cursor:pointer;display:grid;place-items:center}
+.ab-kebab-btn:hover,.ab-kebab-btn[aria-expanded=true]{border-color:var(--blue);color:var(--blue)}
+.ab-kebab-pop{position:absolute;left:0;top:36px;z-index:20;min-width:240px;padding:12px 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line);box-shadow:0 10px 30px rgba(10,30,60,.18);display:flex;flex-direction:column;gap:10px}
+.ab-kebab-pop[hidden]{display:none}
+.ab-kebab-pop label:not(.ab-toggle){display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600;color:var(--ink-mid)}
+.ab-kebab-pop select{font:inherit;font-weight:500;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);min-width:9rem}
+.ab-kebab-pop .ab-toggle{margin-left:0}
+.ab-kebab-pop hr{border:0;border-top:1px solid var(--line);margin:2px 0}
+.ab-kebab-t{margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.ab-per{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink-soft);white-space:nowrap}
+.ab-per:empty{display:none}
+#card-resumo>.ab-scroll{max-height:none}
 </style>
 
 <div class="ab" id="ab">
@@ -421,7 +433,14 @@ body{background:#eef2f8}
     </div>
     <div class="ab-ogrid">
       <div class="ab-card" id="card-ocurva">
-        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label></div>
+        <div class="ab-tools"><div class="ab-kebab ab-noexp"><button class="ab-kebab-btn" type="button" id="o-menu-btn" aria-haspopup="true" aria-expanded="false" title="Opções do gráfico">⋮</button><div class="ab-kebab-pop" id="o-menu" hidden>
+          <p class="ab-kebab-t">Período do gráfico</p>
+          <label>Início<select id="o-ini"></select></label>
+          <label>Fim<select id="o-fim"></select></label>
+          <button class="ab-btn" type="button" id="o-per-auto">Período automático</button>
+          <hr>
+          <label class="ab-toggle"><input type="checkbox" id="o-tend" checked> Mostrar tendência</label>
+        </div></div><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><span class="ab-per" id="o-per"></span></div>
         <div class="ab-legend" id="l-ocurva"></div>
         <div class="ab-chart tall dash-skeleton" id="c-ocurva" data-source="obrigatorios"></div>
       </div>
@@ -595,6 +614,17 @@ body{background:#eef2f8}
   // opção de mostrar/esconder a tendência na Curva S dos obrigatórios (lembrada neste navegador)
   let showTend = true;
   try { showTend = localStorage.getItem('ab-tend') !== '0'; } catch (e) {}
+  let oPer = { ini: '', fim: '' }; // período escolhido no menu ⋮ da Curva S ('' = automático)
+  try { oPer = Object.assign(oPer, JSON.parse(localStorage.getItem('ab-ocurva-per')) || {}); } catch (e) { /* sem armazenamento */ }
+  const oPerSave = () => { try { localStorage.setItem('ab-ocurva-per', JSON.stringify(oPer)); } catch (e) { /* sem armazenamento */ } };
+  const oMenu = $('o-menu'), oMenuBtn = $('o-menu-btn');
+  const oMenuShow = (on) => { oMenu.hidden = !on; oMenuBtn.setAttribute('aria-expanded', String(on)); };
+  oMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); oMenuShow(oMenu.hidden); });
+  oMenu.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => oMenuShow(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') oMenuShow(false); });
+  for (const k of ['ini', 'fim']) $('o-' + k).addEventListener('change', (e) => { oPer[k] = e.target.value; oPerSave(); dash.setParams({}); });
+  $('o-per-auto').addEventListener('click', () => { oPer = { ini: '', fim: '' }; oPerSave(); dash.setParams({}); });
   $('o-tend').checked = showTend;
   $('o-tend').addEventListener('change', (e) => { showTend = e.target.checked; try { localStorage.setItem('ab-tend', showTend ? '1' : '0'); } catch (er) {} dash.setParams({}); });
   const refSel = [$('f-ref-ob')];
@@ -673,7 +703,9 @@ body{background:#eef2f8}
   function hbars(box, rows, keys, colorOf, opt = {}) {
     box.classList.remove('dash-skeleton');
     if (!rows.length) { box.replaceChildren(el('div', 'ab-empty', 'Nenhum documento com os filtros atuais.')); return; }
-    const W = Math.max(280, box.clientWidth || 600), rowH = 24;
+    const W = Math.max(280, box.clientWidth || 600);
+    const alvo = fillH(box, opt.h || 0); // altura pedida (quadro com altura definida ou para acompanhar o vizinho): as linhas se espaçam
+    const rowH = alvo ? Math.max(18, Math.min(44, (alvo - 8) / rows.length)) : 24;
     const H = rows.length * rowH + 8;
     const svg = svgFor(box, W, H);
     const maxChars = Math.max(10, Math.floor((W * 0.4) / 6.2));
@@ -1064,6 +1096,7 @@ body{background:#eef2f8}
         legend($('l-sdoc3'), SDK, sdC);
         // só obrigatórios (filtro Obrigatório = SIM): segmenta também por ativo
         const FS = F.map((r) => r.sdet ? r : Object.assign({}, r, { sdet: '(sem status)' }));
+        let empRows;
         if (soObrig) {
           const linhas = [];
           for (const ge of groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)' })) {
@@ -1071,8 +1104,9 @@ body{background:#eef2f8}
             const sub = groupStatus(FS.filter((r) => (r.emp || '(sem empresa)') === ge.label), 'ativo', SDK, 'sdet', { blank: '(sem ativo)' });
             for (const sa of sub) linhas.push(Object.assign(sa, { label: '› ' + sa.label }));
           }
-          hbars($('c-emp'), linhas, SDK, sdC);
-        } else hbars($('c-emp'), groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 }), SDK, sdC);
+          empRows = linhas;
+        } else empRows = groupStatus(FS, 'emp', SDK, 'sdet', { blank: '(sem empresa)', top: 20 });
+        hbars($('c-emp'), empRows, SDK, sdC);
         setText('t-emp', soObrig ? 'Status do As Built por empresa e ativo' : 'Status do As Built por empresa');
 
         // resumo por empresa, pelo Status do As Built
@@ -1090,6 +1124,16 @@ body{background:#eef2f8}
           ...SDK.map((st, i) => ({ k: 's' + i, label: CURTO[st] || st, num: true, fmt })),
           { k: 'p', label: '% finalizado', num: true, fmt: pct }
         ], em, { sort: 'total', dir: -1, total: tot });
+        // os dois quadros lado a lado ficam da mesma altura: o gráfico de empresas espaça as barras para ocupar o quadro (recalcula a cada filtro)
+        { const cE = $('card-emp'), cR = $('card-resumo');
+          if (empRows.length && !cE.dataset.h && Math.abs(cE.offsetTop - cR.offsetTop) < 4) {
+            const svgE = $('c-emp').querySelector('svg'), tb = $('t-resumo').querySelector('table');
+            const topoE = $('c-emp').getBoundingClientRect().top - cE.getBoundingClientRect().top, topoR = $('t-resumo').getBoundingClientRect().top - cR.getBoundingClientRect().top;
+            const natE = topoE + (svgE ? svgE.getBoundingClientRect().height : 0), natR = cR.dataset.h ? +cR.dataset.h - 21 : topoR + (tb ? tb.offsetHeight : 0);
+            if (natR > natE + 4) hbars($('c-emp'), empRows, SDK, sdC, { h: natR - topoE }); // tabela maior: barras se espaçam
+            else if (tb && natE > natR + 4 && !cR.dataset.h) tb.style.height = Math.round(natE - topoR) + 'px'; // gráfico maior: linhas da tabela se espaçam
+          }
+        }
 
       }
 
@@ -1117,7 +1161,20 @@ body{background:#eef2f8}
     const mesesR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
     const mesesP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendAj)]).filter((m) => m != null);
     const ini = Math.min(d3.min(mesesR) ?? d3.min(mesesP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesP) ?? ref, d3.max(mesesR) ?? ref, ref));
-    const idxs = range(ini, fim);
+    { // listas do menu ⋮: de todo o período com dados até o fim do plano
+      const tudo = [...mesesR, ...mesesP, ...F.filter((r) => r.tram).map((r) => mIdx(r.cdoc)).filter((m) => m != null), ref];
+      const lo = d3.min(tudo), hi = Math.min(2030 * 12 + 11, d3.max(tudo));
+      for (const [k, auto] of [['ini', ini], ['fim', fim]]) {
+        const sel = $('o-' + k);
+        sel.replaceChildren(new Option('Automático (' + mLab(auto) + ')', ''), ...range(lo, hi).map((m) => new Option(mLab(m), mKey(m))));
+        sel.value = oPer[k] && mIdx(oPer[k]) >= lo && mIdx(oPer[k]) <= hi ? oPer[k] : '';
+      }
+    }
+    let iniU = oPer.ini ? mIdx(oPer.ini) : ini, fimU = oPer.fim ? mIdx(oPer.fim) : fim;
+    if (iniU > fimU) [iniU, fimU] = [fimU, iniU];
+    if (fimU - iniU < 1) fimU = iniU + 1;
+    setText('o-per', oPer.ini || oPer.fim ? 'Período: ' + mLab(iniU) + ' a ' + mLab(fimU) : '');
+    const idxs = range(iniU, fimU);
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
       ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendAj) }] : []),
