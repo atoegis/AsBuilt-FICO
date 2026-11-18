@@ -1182,7 +1182,7 @@ body{background:#eef2f8}
     const ini = Math.min(d3.min(mesesR) ?? d3.min(mesesP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesP) ?? ref, d3.max(mesesR) ?? ref, ref));
     { // listas do menu ⋮: de todo o período com dados até o fim do plano
       const tudo = [...mesesR, ...mesesP, ...F.filter((r) => r.tram).map((r) => mIdx(r.cdoc)).filter((m) => m != null), ref];
-      const lo = d3.min(tudo), hi = Math.min(2030 * 12 + 11, d3.max(tudo));
+      const lo = d3.min(tudo), hi = Math.min(2030 * 12 + 11, Math.max(2027 * 12 + 11, d3.max(tudo))); // lista vai pelo menos até dez/27
       for (const [k, auto] of [['ini', ini], ['fim', fim]]) {
         const sel = $('o-' + k);
         sel.replaceChildren(new Option('Automático (' + mLab(auto) + ')', ''), ...range(lo, hi).map((m) => new Option(mLab(m), mKey(m))));
