@@ -10,7 +10,7 @@ window.dash = (function () {
     tracado_eixo: 'dados/tracado_eixo.csv'
   };
   const DEFAULTS = { emp: null, lote: null, pac: null, seg: null, esp: null, sdoc: null, sdet: null, pend: null,
-    ob_emp: null, ob_lote: null, ob_pac: null, ob_ativo: null, ref: null, mbase: 'bd', mmet: 'pf', mseg: null, mfundo: 'street' };
+    ativo: null, ob_emp: null, ob_lote: null, ob_pac: null, ob_ativo: null, ref: null, mbase: 'bd', mmet: 'pf', mseg: null, mfundo: 'street' };
   let params = Object.assign({}, DEFAULTS);
   const state = {}, listeners = [];
   let raf = 0;

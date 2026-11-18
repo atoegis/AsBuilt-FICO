@@ -342,6 +342,7 @@ body{background:#eef2f8}
     <label>Lote<select id="f-lote" data-p="lote" data-k="lote"></select></label>
     <label>Pacote<select id="f-pac" data-p="pac" data-k="pac"></select></label>
     <label>Segmento<select id="f-seg" data-p="seg" data-k="seg"></select></label>
+    <label>Ativo<select id="f-ativo" data-p="ativo" data-k="ativo"></select></label>
     <label>Especialidade<select id="f-esp" data-p="esp" data-k="esp"></select></label>
     <label>Status documento<select id="f-sdoc" data-p="sdoc" data-k="sdoc"></select></label>
     <label>Status do As Built<select id="f-sdet" data-p="sdet" data-k="sdet"></select></label>
@@ -582,8 +583,9 @@ body{background:#eef2f8}
   const P = () => dash.params();
   const selBD = [...document.querySelectorAll('#ab-filters-bd select[data-p]')];
   // aba Contratadas: só Empresa, Lote, Pacote, Segmento e Status do As Built
-  const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'sdet', 'obr']);
-  const selsBD = () => (tab === 'contratadas' ? selBD.filter((x) => CT_F.has(x.dataset.p)) : selBD);
+  const CT_F = new Set(['emp', 'lote', 'pac', 'seg', 'ativo', 'sdet', 'obr']);
+  const SO_CT = new Set(['ativo']); // filtros que só existem na aba Contratadas
+  const selsBD = () => (tab === 'contratadas' ? selBD.filter((x) => CT_F.has(x.dataset.p)) : selBD.filter((x) => !SO_CT.has(x.dataset.p)));
   const selOB = [...document.querySelectorAll('#ab-filters-ob select[data-p]')];
   // ---------- filtros de múltipla seleção ----------
   const vals = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -1044,7 +1046,7 @@ body{background:#eef2f8}
     document.querySelectorAll('.ab-page').forEach((s) => { s.hidden = s.id !== t; });
     const ob = t === 'obrigatorios';
     $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa' || t === 'contratadas'; $('ct-kpis').hidden = t !== 'contratadas';
-    selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' && !CT_F.has(x.dataset.p); });
+    selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' ? !CT_F.has(x.dataset.p) : SO_CT.has(x.dataset.p); });
     document.querySelector('.ab-refwrap-ob').hidden = !ob;
     if (link) dash.setLink(t);
     draw();
@@ -1315,7 +1317,7 @@ body{background:#eef2f8}
     if (!G || D.status !== 'ok') return;
     let rows = prep(D.data, isOb);
     if (!isOb) rows = rows.filter((r) => r.nec === 'SIM');
-    const sels = isOb ? selOB : selBD;
+    const sels = isOb ? selOB : selBD.filter((x) => !SO_CT.has(x.dataset.p));
     fillCascade(sels, sels, rows);
     const F = applyF(rows, sels);
     const S = segStats(F, G);
