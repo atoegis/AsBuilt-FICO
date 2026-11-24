@@ -253,10 +253,14 @@ body{background:#eef2f8}
 .ab-detail .sub{margin:0;font-size:13px;color:var(--ink-mid)}
 .ab-prog{height:10px;border-radius:5px;background:var(--grid);overflow:hidden;display:flex}
 .ab-prog span{display:block;height:100%}
-.ab-dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ab-dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ab-dgrid div{min-width:0}
+#m-detail{container-type:inline-size}
+
 .ab-dgrid div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column}
 .ab-dgrid span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
 .ab-dgrid b{font-family:var(--f-display);font-size:24px;font-weight:400;line-height:1.1;font-variant-numeric:tabular-nums}
+@container (max-width:300px){#m-detail .ab-dgrid{grid-template-columns:minmax(0,1fr);gap:6px}#m-detail .ab-dgrid div{flex-direction:row;align-items:baseline;justify-content:space-between;gap:8px;padding:6px 10px}#m-detail .ab-dgrid b{font-size:21px}}
 .ab-olist{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
 .ab-olist li{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-bottom:1px solid var(--line);padding-bottom:5px}
 .ab-olist li span{display:inline-flex;align-items:center;gap:6px;min-width:0}
@@ -518,7 +522,7 @@ body{background:#eef2f8}
         <div class="ab-mapov ab-readout" id="m-readout">Passe o mouse sobre o traçado</div>
         <div class="ab-mapov ab-zoom"><button type="button" id="m-zin" aria-label="Aproximar">+</button><button type="button" id="m-zout" aria-label="Afastar">−</button><button type="button" id="m-fit" aria-label="Enquadrar obra" title="Enquadrar obra">⤢</button></div>
       </div>
-      <aside class="ab-card ab-detail" id="m-detail" aria-live="polite" hidden></aside>
+      <aside class="ab-card ab-detail" id="m-detail" aria-live="polite"></aside>
     </div>
     <div class="ab-card wide" id="card-strip">
       <h3>Diagrama linear da obra</h3>
@@ -1427,6 +1431,7 @@ body{background:#eef2f8}
     renderMap(G, S, sc, selC);
     renderStrip(G, S, sc, selC);
     renderDetail(G, S, sc, selC, isOb);
+    requestAnimationFrame(fitRows); // Acompanhamento acompanha a altura da linha do mapa
 
     const docs = selC ? S.st.get(selC).rows : F.filter((r) => r.res && !r.segs.length);
     setText('h-mdocs', selC ? `Documentos do segmento ${selC}` : 'Documentos sem segmento');
@@ -1759,7 +1764,7 @@ body{background:#eef2f8}
       const seen = new Set();
       for (const v of S.st.values()) for (const r of v.rows) { if (seen.has(r)) continue; seen.add(r); o.total++; if (r.res === 'Finalizado') o.fin++; else if (r.res === 'Em trâmite') o.tram++; else o.pend++; if (r.sdoc === 'Atrasado') o.atr++; o.rep += r.nrep; }
       o.pf = o.total ? o.fin / o.total : null;
-      kick = 'Obra completa'; title = 'Traçado FICO'; sub = 'Clique em um segmento no mapa, na lista ou no diagrama para ver o detalhe.';
+      kick = 'Acompanhamento'; title = 'Traçado FICO'; sub = 'Clique em um segmento no mapa ou no diagrama para ver o detalhe.';
     }
     box.append(el('p', 'kick', kick), el('h3', 'big', title), el('p', 'sub', sub));
     if (o.total) {
@@ -1785,12 +1790,13 @@ body{background:#eef2f8}
   const start = location.hash.slice(1);
 
   // ================= LAYOUT EDITÁVEL (mover / largura / altura dos quadros, salvo neste navegador) =================
-  const LAY_KEY = 'ab-layout-v1';
+  const LAY_KEY = 'ab-layout-v2'; // v2: novo arranjo do mapa (Curva S | mapa | Acompanhamento)
+  try { const v1 = localStorage.getItem('ab-layout-v1'); if (v1 && !localStorage.getItem(LAY_KEY)) { const o = JSON.parse(v1); delete o.mapa; localStorage.setItem(LAY_KEY, JSON.stringify(o)); } } catch (e) { /* sem armazenamento */ }
   const LAY_DEF = {
     visao: [['card-gauges', 6], ['card-concl', 6], ['card-disc', 12], ['card-pac', 12], ['card-ativo', 12]],
     contratadas: [['card-emp', 6], ['card-resumo', 6], ['card-tram', 12]],
     obrigatorios: [['card-ocurva', 6], ['card-oativo', 6], ['card-omes', 3], ['card-oader', 3], ['card-oemp', 6]],
-    mapa: [['card-mcurva', 6], ['card-map', 6], ['card-seglist', 3], ['m-detail', 3], ['card-strip', 12], ['card-mdocs', 12]]
+    mapa: [['card-mcurva', 5], ['card-map', 5], ['m-detail', 2], ['card-seglist', 3], ['card-strip', 12], ['card-mdocs', 12]]
   };
   const layLoad = () => { try { return JSON.parse(localStorage.getItem(LAY_KEY)) || {}; } catch (e) { return {}; } };
   const laySave = (o) => { try { localStorage.setItem(LAY_KEY, JSON.stringify(o)); } catch (e) { /* sem armazenamento: vale só nesta visita */ } };
