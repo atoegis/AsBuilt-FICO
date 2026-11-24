@@ -1776,7 +1776,13 @@ body{background:#eef2f8}
       box.append(prog);
     } else box.append(el('p', 'ab-note', 'Nenhum documento localizado neste segmento com os filtros atuais.'));
     const grid = el('div', 'ab-dgrid');
-    for (const [k, v] of [['Documentos', o.total], ['Finalizados', o.fin], ['Em trâmite', o.tram], ['Pendentes', o.pend], ['Atrasados', o.atr], ['Reprovações', o.rep]]) { const d = el('div'); d.append(el('span', null, k), el('b', null, fmt(v))); grid.append(d); }
+    { // mesmos conceitos da aba Documentos obrigatórios (sobre os documentos do traçado ou do segmento escolhido)
+      const rs = s ? o.rows : [...new Set([...S.st.values()].flatMap((v) => v.rows))], ref = refIdx();
+      const n = rs.length, ap = rs.filter((r) => r.real).length, tr = rs.filter((r) => r.tram).length, pl = rs.filter((r) => leM(r.plano, ref)).length;
+      for (const [k, v] of [['Total', fmt(n)], ['Planejado', fmt(pl)], ['Aprovados', fmt(ap)], ['Em trâmite', fmt(tr)], ['Não emitidos', fmt(n - ap - tr)], ['Aderência', n ? pct(ap / n) : '—']]) {
+        const d = el('div'); d.append(el('span', null, k), el('b', null, v)); if (k === 'Planejado') d.title = 'Data Reprogramada (ou Prevista) até ' + mLab(ref); if (k === 'Aderência') d.title = 'Aprovados ÷ Total'; grid.append(d);
+      }
+    }
     box.append(grid);
     const oaes = G.O.filter((q) => !s || q.seg === s.code);
     if (s && oaes.length) {
