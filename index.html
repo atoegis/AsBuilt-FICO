@@ -487,7 +487,13 @@ body{background:#eef2f8}
       <div class="grp"><span class="lbl">Mapa de fundo</span><div class="ab-seg" id="m-fundo"><button type="button" data-v="street">Ruas</button><button type="button" data-v="hot">Humanitário</button><button type="button" data-v="topo">Relevo</button><button type="button" data-v="sat">Satélite</button><button type="button" data-v="none">Sem fundo</button></div></div>
       <button class="ab-btn" id="m-clear" type="button" hidden>Limpar segmento</button>
     </div>
-    <div class="ab-kpis" id="m-stkpis" data-source="documentos"></div>
+    <div class="ab-kpis" id="m-stkpis" data-source="documentos">
+      <div class="ab-kpi"><span class="k" id="mk2-total-k">Documentos</span><span class="v" id="mk2-total">—</span><span class="n">na base</span></div>
+      <div class="ab-kpi" style="--kc:var(--good)"><span class="k">Aprovados</span><span class="v" id="mk2-real">—</span><span class="n" id="mk2-real-p">—</span></div>
+      <div class="ab-kpi" style="--kc:var(--orange)"><span class="k">Em análise</span><span class="v" id="mk2-and">—</span><span class="n">pendente CDOC ou Vale</span></div>
+      <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Não emitidos</span><span class="v" id="mk2-ne">—</span><span class="n" id="mk2-ne-p">—</span></div>
+      <div class="ab-kpi" style="--kc:var(--navy)"><span class="k">Planejado até o mês</span><span class="v" id="mk2-plan">—</span><span class="n" id="mk2-plan-n">—</span></div>
+    </div>
     <div class="ab-kpis" id="m-kpis" hidden data-source="documentos obrigatorios tracado_segmentos">
       <div class="ab-kpi" style="--kc:var(--orange)"><span class="k">Documentos no traçado</span><span class="v" id="mk-map">—</span><span class="n" id="mk-map-n">—</span></div>
       <div class="ab-kpi" style="--kc:var(--muted-bar)" hidden><span class="k">Sem segmento</span><span class="v" id="mk-sem">—</span><span class="n">gerais ou sem localização</span></div>
@@ -1370,15 +1376,12 @@ body{background:#eef2f8}
       legend($('l-mcurva'), series.map((x) => x.name), (k) => series.find((x) => x.name === k).color, () => 'ln');
       lineChart($('c-mcurva'), idxs, series, ref, { labels: true, h: 470 });
     }
-    // KPIs por status do As Built (iguais aos da aba Contratadas)
-    { const ordemS = Object.keys(SDET_C);
-      const sts = [...new Set(rows.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemS.indexOf(a) + 1) || 99) - ((ordemS.indexOf(b) + 1) || 99) || a.localeCompare(b, 'pt-BR'));
-      $('m-stkpis').replaceChildren(...sts.map((st) => {
-        const n = F.filter((r) => (r.sdet || '(sem status)') === st).length;
-        const k = el('div', 'ab-kpi'); k.style.setProperty('--kc', SDET_C[st] || 'var(--ink-soft)');
-        k.append(el('span', 'k', st), el('span', 'v', fmt(n)), el('span', 'n', F.length ? pct(n / F.length) + ' do total' : '—'));
-        return k;
-      })); }
+    // KPIs iguais aos da aba Documentos obrigatórios
+    { const ref = refIdx(), n = F.length, real = F.filter((r) => r.real).length, and = F.filter((r) => r.andam).length;
+      const ne = n - real - F.filter((r) => r.tram).length, plan = F.filter((r) => leM(r.plano, ref)).length; // não emitidos = total − aprovados − em trâmite
+      setText('mk2-total-k', base.length === 2 ? 'Documentos' : base[0] === 'ob' ? 'Documentos obrigatórios' : 'Documentos não obrigatórios');
+      setText('mk2-total', fmt(n)); setText('mk2-real', fmt(real)); setText('mk2-real-p', n ? pct(real / n) + ' do total' : '—'); setText('mk2-and', fmt(and));
+      setText('mk2-ne', fmt(ne)); setText('mk2-ne-p', n ? pct(ne / n) + ' do total' : '—'); setText('mk2-plan', fmt(plan)); setText('mk2-plan-n', 'previstos até ' + mLab(ref)); }
     // KPIs
     const tot = S.mapped + S.sem;
     setText('mk-map', fmt(S.mapped)); setText('mk-map-n', pct(S.mapped / tot) + ' dos documentos');
