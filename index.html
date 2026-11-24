@@ -211,6 +211,8 @@ body{background:#eef2f8}
 @media (max-width:1180px){.ab-mapgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ab-mapcard{grid-column:1/-1;order:-1}}
 @media (max-width:720px){.ab-mapgrid{grid-template-columns:1fr}}
 .ab-mapcard{padding:0;overflow:hidden;position:relative;border-top:3px solid var(--orange)}
+#card-map{display:flex;flex-direction:column}
+#card-map>.ab-map{flex:1 1 auto}
 .ab-map{position:relative;min-height:380px;background:color-mix(in srgb,var(--blue) 4%,var(--paper));touch-action:none;cursor:grab}
 .ab-map:active{cursor:grabbing}
 .ab-map svg{display:block}
@@ -494,7 +496,12 @@ body{background:#eef2f8}
       <div class="ab-kpi" style="--kc:var(--bad)"><span class="k">Mais atrasos</span><span class="v" id="mk-atr">—</span><span class="n" id="mk-atr-n">—</span></div>
     </div>
     <div class="ab-mapgrid">
-      <aside class="ab-card ab-seglist" id="card-seglist" aria-label="Segmentos">
+      <div class="ab-card" id="card-mcurva">
+        <div class="ab-tools"><h3 id="h-mcurva">Curva S</h3><span class="ab-semdata" id="m-semdata" title="Documentos com Status Documento = S/data não entram no Planejado, Tendência e Realizado"></span></div>
+        <div class="ab-legend" id="l-mcurva"></div>
+        <div class="ab-chart dash-skeleton" id="c-mcurva" data-source="documentos"></div>
+      </div>
+      <aside class="ab-card ab-seglist" id="card-seglist" aria-label="Segmentos" hidden>
         <div class="head"><h3>Segmentos</h3><span class="ab-count" id="m-segcount">—</span></div>
         <div class="items" id="m-list" data-source="tracado_segmentos"></div>
       </aside>
@@ -505,7 +512,7 @@ body{background:#eef2f8}
         <div class="ab-mapov ab-readout" id="m-readout">Passe o mouse sobre o traçado</div>
         <div class="ab-mapov ab-zoom"><button type="button" id="m-zin" aria-label="Aproximar">+</button><button type="button" id="m-zout" aria-label="Afastar">−</button><button type="button" id="m-fit" aria-label="Enquadrar obra" title="Enquadrar obra">⤢</button></div>
       </div>
-      <aside class="ab-card ab-detail" id="m-detail" aria-live="polite"></aside>
+      <aside class="ab-card ab-detail" id="m-detail" aria-live="polite" hidden></aside>
     </div>
     <div class="ab-card wide" id="card-strip">
       <h3>Diagrama linear da obra</h3>
@@ -1345,6 +1352,24 @@ body{background:#eef2f8}
     const selC = P().mseg && S.st.has(P().mseg) ? P().mseg : null;
     $('m-clear').hidden = !selC;
 
+    // Curva S do mapa (mesmas regras da aba Documentos obrigatórios; com segmento escolhido, só ele)
+    { const ref = refIdx(), FS = selC ? F.filter((r) => r.segs.includes(selC)) : F;
+      const FC = FS.filter((r) => r.sdoc !== 'S/data'), sem = FS.length - FC.length;
+      $('m-semdata').innerHTML = sem ? `Sem data: <b>${fmt(sem)}</b> fora da curva` : '';
+      setText('h-mcurva', 'Curva S' + (selC ? ' · segmento ' + selC : ''));
+      const mR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
+      const mP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tend)]).filter((m) => m != null);
+      const ini = Math.min(d3.min(mR) ?? d3.min(mP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mP) ?? ref, d3.max(mR) ?? ref, ref, ini + 1));
+      const idxs = range(ini, fim);
+      const series = [
+        { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
+        ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tend) }] : []),
+        { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
+        { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FS, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
+      ];
+      legend($('l-mcurva'), series.map((x) => x.name), (k) => series.find((x) => x.name === k).color, () => 'ln');
+      lineChart($('c-mcurva'), idxs, series, ref, { labels: true, h: 470 });
+    }
     // KPIs por status do As Built (iguais aos da aba Contratadas)
     { const ordemS = Object.keys(SDET_C);
       const sts = [...new Set(rows.map((r) => r.sdet || '(sem status)'))].sort((a, b) => ((ordemS.indexOf(a) + 1) || 99) - ((ordemS.indexOf(b) + 1) || 99) || a.localeCompare(b, 'pt-BR'));
@@ -1762,7 +1787,7 @@ body{background:#eef2f8}
     visao: [['card-gauges', 6], ['card-concl', 6], ['card-disc', 12], ['card-pac', 12], ['card-ativo', 12]],
     contratadas: [['card-emp', 6], ['card-resumo', 6], ['card-tram', 12]],
     obrigatorios: [['card-ocurva', 6], ['card-oativo', 6], ['card-omes', 3], ['card-oader', 3], ['card-oemp', 6]],
-    mapa: [['card-seglist', 3], ['card-map', 6], ['m-detail', 3], ['card-strip', 12], ['card-mdocs', 12]]
+    mapa: [['card-mcurva', 6], ['card-map', 6], ['card-seglist', 3], ['m-detail', 3], ['card-strip', 12], ['card-mdocs', 12]]
   };
   const layLoad = () => { try { return JSON.parse(localStorage.getItem(LAY_KEY)) || {}; } catch (e) { return {}; } };
   const laySave = (o) => { try { localStorage.setItem(LAY_KEY, JSON.stringify(o)); } catch (e) { /* sem armazenamento: vale só nesta visita */ } };
@@ -1787,7 +1812,8 @@ body{background:#eef2f8}
   }
   function layApply(pg) {
     const g = lays[pg]; if (!g) return;
-    const saved = layLoad()[pg] || [], def = LAY_DEF[pg];
+    let saved = layLoad()[pg] || []; const def = LAY_DEF[pg];
+    if (saved.length && def.some(([id]) => !saved.some((x) => x.id === id))) saved = []; // quadro novo na aba: volta ao arranjo padrão
     const known = new Set(def.map(([id]) => id));
     const order = [...saved.filter((x) => known.has(x.id)), ...def.filter(([id]) => !saved.some((x) => x.id === id)).map(([id, sp]) => ({ id, s: sp }))];
     for (const it of order) {
