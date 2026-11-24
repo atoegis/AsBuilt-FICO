@@ -222,6 +222,9 @@ body{background:#eef2f8}
 .ab-ramp .bar{height:8px;border-radius:4px}
 .ab-ramp .ends{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
 .ab-ramp .key{display:flex;gap:10px;flex-wrap:wrap}
+.ab-ramp .cats{display:flex;flex-direction:column;gap:3px}
+.ab-ramp .cats span{display:inline-flex;align-items:center;gap:6px}
+.ab-ramp .cats b{display:inline-block;width:14px;height:8px;border-radius:3px}
 .ab-ramp .key span{display:inline-flex;align-items:center;gap:4px}
 .ab-ramp .key i{display:inline-block;width:9px;height:9px;transform:rotate(45deg);border-radius:1px;background:var(--ink-soft)}
 .ab-ramp .key i.nd{transform:none;width:14px;height:0;border-top:2px dashed var(--ink-soft);background:none;border-radius:0}
@@ -478,7 +481,7 @@ body{background:#eef2f8}
     <p class="ab-label">Mapa de avanço do As Built</p>
     <div class="ab-mapbar">
       <div class="grp"><span class="lbl">Base</span><div class="ab-seg" id="m-base"><button type="button" data-v="bd">Documentos As Built</button><button type="button" data-v="ob">Obrigatórios</button></div></div>
-      <div class="grp"><span class="lbl">Colorir por</span><div class="ab-seg" id="m-met"><button type="button" data-v="pf">% finalizado</button><button type="button" data-v="pa">% atrasado</button><button type="button" data-v="n">Documentos</button></div></div>
+      <div class="grp"><span class="lbl">Colorir por</span><div class="ab-seg" id="m-met"><button type="button" data-v="pf">% finalizado</button><button type="button" data-v="pa">% atrasado</button><button type="button" data-v="n">Documentos</button><button type="button" data-v="st">Status</button></div></div>
       <div class="grp"><span class="lbl">Mapa de fundo</span><div class="ab-seg" id="m-fundo"><button type="button" data-v="street">Ruas</button><button type="button" data-v="hot">Humanitário</button><button type="button" data-v="topo">Relevo</button><button type="button" data-v="sat">Satélite</button><button type="button" data-v="none">Sem fundo</button></div></div>
       <button class="ab-btn" id="m-clear" type="button" hidden>Limpar segmento</button>
     </div>
@@ -1284,20 +1287,29 @@ body{background:#eef2f8}
   function sliceE(E, a, b) { const out = [atKm(E, a)]; for (const p of E) if (p.km > a && p.km < b) out.push([p.lon, p.lat]); out.push(atKm(E, b)); return out; }
 
   function segStats(rows, G) {
-    const st = new Map(G.S.map((s) => [s.code, { total: 0, fin: 0, tram: 0, pend: 0, atr: 0, rep: 0, rows: [] }]));
-    const ost = new Map(G.O.map((o) => [String(o.id), { total: 0, fin: 0, atr: 0 }]));
+    const st = new Map(G.S.map((s) => [s.code, { total: 0, fin: 0, tram: 0, pend: 0, atr: 0, rep: 0, rows: [], sd: {} }]));
+    const ost = new Map(G.O.map((o) => [String(o.id), { total: 0, fin: 0, atr: 0, sd: {} }]));
     let mapped = 0, sem = 0;
     for (const r of rows) {
       if (!r.res) continue;
       const segs = r.segs; if (segs.length) mapped++; else sem++;
-      for (const c of segs) { const o = st.get(c); if (!o) continue; o.total++; o.rows.push(r); if (r.res === 'Finalizado') o.fin++; else if (r.res === 'Em trâmite') o.tram++; else o.pend++; if (r.sdoc === 'Atrasado') o.atr++; o.rep += r.nrep; }
-      for (const id of r.oaes) { const o = ost.get(id); if (!o) continue; o.total++; if (r.res === 'Finalizado') o.fin++; if (r.sdoc === 'Atrasado') o.atr++; }
+      for (const c of segs) { const o = st.get(c); if (!o) continue; o.total++; o.rows.push(r); if (r.res === 'Finalizado') o.fin++; else if (r.res === 'Em trâmite') o.tram++; else o.pend++; if (r.sdoc === 'Atrasado') o.atr++; o.rep += r.nrep; o.sd[r.sdet] = (o.sd[r.sdet] || 0) + 1; }
+      for (const id of r.oaes) { const o = ost.get(id); if (!o) continue; o.total++; if (r.res === 'Finalizado') o.fin++; if (r.sdoc === 'Atrasado') o.atr++; o.sd[r.sdet] = (o.sd[r.sdet] || 0) + 1; }
     }
-    for (const o of [...st.values(), ...ost.values()]) { o.pf = o.total ? o.fin / o.total : null; o.pa = o.total ? o.atr / o.total : null; }
+    for (const o of [...st.values(), ...ost.values()]) {
+      o.pf = o.total ? o.fin / o.total : null; o.pa = o.total ? o.atr / o.total : null;
+      const ord = Object.keys(SDET_C); // status predominante (empate: o que vem antes na ordem do painel)
+      o.dom = Object.keys(o.sd).sort((a, b) => o.sd[b] - o.sd[a] || ord.indexOf(a) - ord.indexOf(b))[0] || null;
+    }
     return { st, ost, mapped, sem };
   }
   function metricScale(met, st) {
     const ip = (a, b) => d3.interpolateRgb(a, b);
+    if (met === 'st') { // cor do status do As Built predominante no segmento / OAE
+      const cor = (k) => { const c = SDET_C[k] || C[7]; const m = /^var\((--[\w-]+)\)$/.exec(c); return m ? css(m[1]) : c; };
+      const cats = Object.keys(SDET_C).filter((k) => [...st.values()].some((o) => o.dom === k));
+      return { f: (o) => cor(o.dom), cats: cats.map((k) => [k, cor(k)]), name: 'status predominante', val: (o) => `${o.dom} (${pct(o.sd[o.dom] / o.total)})` };
+    }
     if (met === 'pf') { const s = d3.scaleLinear([0, 0.5, 1], [css('--bad'), css('--orange'), css('--good')]).clamp(true); return { f: (o) => s(o.pf), lo: '0%', hi: '100%', grad: [css('--bad'), css('--orange'), css('--good')], name: '% finalizado', val: (o) => pct(o.pf) }; }
     if (met === 'pa') { const mx = Math.max(0.05, d3.max([...st.values()], (o) => o.pa) || 0); const s = d3.scaleLinear([0, mx], [css('--muted-bar'), css('--bad')]).interpolate(ip).clamp(true); return { f: (o) => s(o.pa), lo: '0%', hi: pct(mx), grad: [css('--muted-bar'), css('--bad')], name: '% atrasado', val: (o) => pct(o.pa) }; }
     const mx = Math.max(1, d3.max([...st.values()], (o) => o.total) || 1); const s = d3.scaleSqrt([0, mx], [css('--muted-bar'), css('--blue')]).interpolate(ip).clamp(true);
@@ -1353,8 +1365,14 @@ body{background:#eef2f8}
     // rampa
     const ramp = $('m-ramp'); ramp.replaceChildren();
     ramp.append(el('span', null, 'Cor: ' + sc.name));
-    const bar = el('div', 'bar'); bar.style.background = `linear-gradient(90deg,${sc.grad.join(',')})`; ramp.append(bar);
-    const ends = el('div', 'ends'); ends.append(el('span', null, sc.lo), el('span', null, sc.hi)); ramp.append(ends);
+    if (sc.cats) { // legenda por categoria
+      const lst = el('div', 'cats');
+      for (const [k, c] of sc.cats) { const it = el('span'); const sw = el('b'); sw.style.background = c; it.append(sw, document.createTextNode(k)); lst.append(it); }
+      ramp.append(lst);
+    } else {
+      const bar = el('div', 'bar'); bar.style.background = `linear-gradient(90deg,${sc.grad.join(',')})`; ramp.append(bar);
+      const ends = el('div', 'ends'); ends.append(el('span', null, sc.lo), el('span', null, sc.hi)); ramp.append(ends);
+    }
     const key = el('div', 'key'); const k1 = el('span'); k1.append(el('i'), document.createTextNode('OAE')); const k2 = el('span'); k2.append(el('i', 'nd'), document.createTextNode('sem docs')); key.append(k1, k2); ramp.append(key);
 
     // zoom no filtro ativo: enquadra os segmentos que ficaram com documentos
