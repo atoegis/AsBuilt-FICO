@@ -487,7 +487,7 @@ body{background:#eef2f8}
     </div>
     <div class="ab-kpis" id="m-kpis" data-source="documentos obrigatorios tracado_segmentos">
       <div class="ab-kpi" style="--kc:var(--orange)"><span class="k">Documentos no traçado</span><span class="v" id="mk-map">—</span><span class="n" id="mk-map-n">—</span></div>
-      <div class="ab-kpi" style="--kc:var(--muted-bar)"><span class="k">Sem segmento</span><span class="v" id="mk-sem">—</span><span class="n">gerais ou sem localização</span></div>
+      <div class="ab-kpi" style="--kc:var(--muted-bar)" hidden><span class="k">Sem segmento</span><span class="v" id="mk-sem">—</span><span class="n">gerais ou sem localização</span></div>
       <div class="ab-kpi" style="--kc:var(--blue)"><span class="k">Segmentos com documentos</span><span class="v" id="mk-segs">—</span><span class="n" id="mk-segs-n">—</span></div>
       <div class="ab-kpi" style="--kc:var(--good)"><span class="k">Mais avançado</span><span class="v" id="mk-best">—</span><span class="n" id="mk-best-n">—</span></div>
       <div class="ab-kpi" style="--kc:var(--bad)"><span class="k">Mais atrasos</span><span class="v" id="mk-atr">—</span><span class="n" id="mk-atr-n">—</span></div>
@@ -511,7 +511,7 @@ body{background:#eef2f8}
       <p class="ab-note">Km 0 a 364,8 com lotes, pacotes, segmentos, OAEs (losangos) e municípios. </p>
       <div class="ab-strip" id="c-strip" data-source="tracado_segmentos tracado_oaes tracado_municipios"></div>
     </div>
-    <div class="ab-card wide" id="card-mdocs">
+    <div class="ab-card wide" id="card-mdocs" hidden>
       <div class="ab-tools"><h3 id="h-mdocs">Documentos do segmento</h3><input class="ab-search" id="s-mdocs" type="search" placeholder="Buscar por número, título, empresa…" aria-label="Buscar documentos do segmento"><span class="ab-count" id="cnt-mdocs"></span></div>
       <div class="ab-scroll" id="t-mdocs"></div>
     </div>
