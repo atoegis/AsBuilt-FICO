@@ -328,10 +328,9 @@ body{background:#eef2f8}
   </header>
 
   <nav class="ab-tabs" role="tablist" aria-label="Páginas do painel">
-    <button class="ab-tab" role="tab" data-tab="visao" id="tab-visao"><span class="tnum">1</span>Visão geral</button>
-    <button class="ab-tab" role="tab" data-tab="contratadas" id="tab-contratadas"><span class="tnum">2</span>Contratadas</button>
-    <button class="ab-tab" role="tab" data-tab="obrigatorios" id="tab-obrigatorios"><span class="tnum">3</span>Documentos obrigatórios</button>
-    <button class="ab-tab" role="tab" data-tab="mapa" id="tab-mapa"><span class="tnum">4</span>Mapa de avanço</button>
+    <button class="ab-tab" role="tab" data-tab="contratadas" id="tab-contratadas"><span class="tnum">1</span>Contratadas</button>
+    <button class="ab-tab" role="tab" data-tab="obrigatorios" id="tab-obrigatorios"><span class="tnum">2</span>Documentos obrigatórios</button>
+    <button class="ab-tab" role="tab" data-tab="mapa" id="tab-mapa"><span class="tnum">3</span>Mapa de avanço</button>
     <button class="ab-tab ab-tab-edit ab-noexp" type="button" id="ab-edit" aria-pressed="false" title="Mover e redimensionar os quadros desta página">✎ Editar layout</button>
   </nav>
 
@@ -371,7 +370,7 @@ body{background:#eef2f8}
   <div class="ab-kpis" id="ct-kpis" data-source="documentos" hidden></div>
 
   <!-- VISÃO GERAL -->
-  <section id="visao" class="ab-page" role="tabpanel" aria-labelledby="tab-visao">
+  <section id="visao" class="ab-page" role="tabpanel" hidden> <!-- aba Visão geral removida do menu (mantida oculta) -->
     <p class="ab-label">Indicadores gerais</p>
     <div class="ab-grid">
       <div class="ab-card" id="card-gauges">
@@ -1038,7 +1037,7 @@ body{background:#eef2f8}
   }
 
   // ---------- desenho ----------
-  let tab = 'visao';
+  let tab = 'contratadas';
   const tabs = [...document.querySelectorAll('.ab-tab[data-tab]')];
   function showTab(t, link) {
     tab = t;
@@ -1832,7 +1831,7 @@ body{background:#eef2f8}
     const card = h.closest('.ab-card'); card.style.height = ''; delete card.dataset.h; layStore(card.parentElement.dataset.page); relayout();
   });
 
-  showTab(['visao', 'contratadas', 'obrigatorios', 'mapa'].includes(start) ? start : 'visao', false);
+  showTab(['contratadas', 'obrigatorios', 'mapa'].includes(start) ? start : 'contratadas', false);
   dash.onData(draw);
 })();
 </script>
