@@ -480,7 +480,7 @@ body{background:#eef2f8}
   <section id="mapa" class="ab-page" role="tabpanel" aria-labelledby="tab-mapa" hidden>
     <p class="ab-label">Mapa de avanço do As Built</p>
     <div class="ab-mapbar">
-      <div class="grp"><span class="lbl">Base</span><div class="ab-seg" id="m-base"><button type="button" data-v="bd">Documentos As Built</button><button type="button" data-v="ob">Obrigatórios</button></div></div>
+      <div class="grp"><span class="lbl">Base</span><div class="ab-seg" id="m-base" title="Marque um ou os dois"><button type="button" data-v="nao">Não obrigatório</button><button type="button" data-v="ob">Obrigatórios</button></div></div>
       <div class="grp"><span class="lbl">Colorir por</span><div class="ab-seg" id="m-met"><button type="button" data-v="pf">% finalizado</button><button type="button" data-v="pa">% atrasado</button><button type="button" data-v="n">Documentos</button><button type="button" data-v="st">Status</button></div></div>
       <div class="grp"><span class="lbl">Mapa de fundo</span><div class="ab-seg" id="m-fundo"><button type="button" data-v="street">Ruas</button><button type="button" data-v="hot">Humanitário</button><button type="button" data-v="topo">Relevo</button><button type="button" data-v="sat">Satélite</button><button type="button" data-v="none">Sem fundo</button></div></div>
       <button class="ab-btn" id="m-clear" type="button" hidden>Limpar segmento</button>
@@ -1048,7 +1048,7 @@ body{background:#eef2f8}
     document.querySelectorAll('.ab-page').forEach((s) => { s.hidden = s.id !== t; });
     const ob = t === 'obrigatorios';
     $('ab-filters-bd').hidden = ob; $('ab-filters-ob').hidden = !ob; $('ab-kpis').hidden = ob || t === 'mapa' || t === 'contratadas'; $('ct-kpis').hidden = t !== 'contratadas';
-    selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' ? !CT_F.has(x.dataset.p) : SO_CT.has(x.dataset.p); });
+    selBD.forEach((x) => { x.closest('label').hidden = t === 'contratadas' ? !CT_F.has(x.dataset.p) : SO_CT.has(x.dataset.p) || (t === 'mapa' && x.dataset.p === 'obr'); });
     document.querySelector('.ab-refwrap-ob').hidden = !ob;
     if (link) dash.setLink(t);
     draw();
@@ -1233,7 +1233,15 @@ body{background:#eef2f8}
     box.addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) dash.setParams({ [key]: b.dataset.v }); });
     return () => { const v = P()[key] || def; box.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); return v; };
   };
-  const baseSel = segBtns('m-base', 'mbase', 'bd'), metSel = segBtns('m-met', 'mmet', 'pf'), fundoSel = segBtns('m-fundo', 'mfundo', 'street');
+  // base do mapa: Não obrigatório e/ou Obrigatórios (os dois podem ficar marcados; pelo menos um sempre fica)
+  const baseLer = () => { const v = String(P().mbase || ''); const a = v.split(',').filter((x) => x === 'nao' || x === 'ob'); return a.length ? a : ['nao', 'ob']; };
+  $('m-base').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-v]'); if (!b) return;
+    const cur = new Set(baseLer()); if (cur.has(b.dataset.v)) { if (cur.size > 1) cur.delete(b.dataset.v); } else cur.add(b.dataset.v);
+    dash.setParams({ mbase: ['nao', 'ob'].filter((x) => cur.has(x)).join(',') });
+  });
+  const baseSel = () => { const a = baseLer(); $('m-base').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(a.includes(b.dataset.v)))); return a; };
+  const metSel = segBtns('m-met', 'mmet', 'pf'), fundoSel = segBtns('m-fundo', 'mfundo', 'street');
   $('m-clear').addEventListener('click', () => dash.setParams({ mseg: null }));
   $('s-mdocs').addEventListener('input', () => { const b = $('t-mdocs'); if (b._t) renderT(b); });
   const M = { zoom: null, t: d3.zoomIdentity, svg: null, lastSel: undefined, lastW: 0 };
@@ -1319,16 +1327,16 @@ body{background:#eef2f8}
 
   function drawMapa() {
     const base = baseSel(), met = metSel();
-    const isOb = base === 'ob';
-    $('ab-filters-bd').hidden = isOb; $('ab-filters-ob').hidden = !isOb;
+    const isOb = false; // o mapa usa sempre a BD; a base só separa obrigatórios e não obrigatórios
+    $('ab-filters-bd').hidden = false; $('ab-filters-ob').hidden = true;
     document.querySelector('.ab-refwrap-ob').hidden = true;
     const G = geo();
     const D = dash.data(isOb ? 'obrigatorios' : 'documentos');
     if (G === 'error' || D.status === 'error') { ['c-map', 'c-strip'].forEach((id) => { const b = $(id); b.classList.remove('dash-skeleton'); const f = el('div', 'ab-fail'); f.append(el('i'), document.createTextNode('Failed to load')); b.replaceChildren(f); }); return; }
     if (!G || D.status !== 'ok') return;
     let rows = prep(D.data, isOb);
-    if (!isOb) rows = rows.filter((r) => r.nec === 'SIM');
-    const sels = isOb ? selOB : selBD.filter((x) => !SO_CT.has(x.dataset.p));
+    rows = rows.filter((r) => r.nec === 'SIM' && (base.length === 2 || (base[0] === 'ob' ? r.obr === 'SIM' : r.obr !== 'SIM')));
+    const sels = selBD.filter((x) => !SO_CT.has(x.dataset.p) && x.dataset.p !== 'obr'); // o filtro Obrigatório vira a base do mapa
     fillCascade(sels, sels, rows);
     const F = applyF(rows, sels);
     const S = segStats(F, G);
@@ -1346,7 +1354,7 @@ body{background:#eef2f8}
     setText('mk-best', best ? best.code : '—'); setText('mk-best-n', best ? `${pct(S.st.get(best.code).pf)} finalizado` : 'mínimo de 5 documentos');
     const worst = withDocs.sort((a, b) => S.st.get(b.code).atr - S.st.get(a.code).atr)[0];
     setText('mk-atr', worst && S.st.get(worst.code).atr ? worst.code : '—'); setText('mk-atr-n', worst ? `${fmt(S.st.get(worst.code).atr)} atrasados` : '—');
-    setText('ab-take', `${fmt(S.mapped)} documentos ${isOb ? 'obrigatórios' : 'com As Built necessário'} localizados em ${fmt(withDocs.length)} segmentos do traçado. Cor por ${sc.name}.`);
+    setText('ab-take', `${fmt(S.mapped)} documentos ${base.length === 2 ? 'com As Built necessário' : base[0] === 'ob' ? 'obrigatórios' : 'não obrigatórios'} localizados em ${fmt(withDocs.length)} segmentos do traçado. Cor por ${sc.name}.`);
 
     // lista
     setText('m-segcount', fmt(G.S.length));
