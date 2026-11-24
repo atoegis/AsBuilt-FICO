@@ -554,8 +554,6 @@ body{background:#eef2f8}
   const mKey = (i) => Math.floor(i / 12) + '-' + String((i % 12) + 1).padStart(2, '0');
   const NOW = new Date();
   const TODAY_M = NOW.getFullYear() * 12 + NOW.getMonth();
-  const HOJE_ISO = `${NOW.getFullYear()}-${String(NOW.getMonth() + 1).padStart(2, '0')}-${String(NOW.getDate()).padStart(2, '0')}`;
-  const maisDias = (iso, n) => { const d = new Date(iso.slice(0, 10) + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
   const TODAY_MS = Date.UTC(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
   const AX0 = 2025 * 12; // jan/25, início do eixo usado no Power BI
   const OB0 = 2026 * 12 + 5; // jun/26: início da Curva S e do mês de referência dos obrigatórios
@@ -594,11 +592,7 @@ body{background:#eef2f8}
       o.real = REAL.has(o.sdet); o.andam = ANDAM.has(o.sdet); o.recus = RECUS.has(o.sdet);
       o.tram = o.andam || o.recus; o.emit = o.tram || o.real; o.res = resumo(o.sdet);
       o.plano = o.reprog || o.prev; // planejado: data reprogramada quando houver, senão a prevista
-      // tendência (mesma regra nas abas Documentos obrigatórios e Mapa):
-      // finalizado → Data Conclusão; não finalizado → Reprogramada (ou Prevista); se essa data já passou → ela + 5 dias
-      if (o.sdoc === 'Finalizado') o.tendR = o.concl || o.cdoc || null;
-      else if (!o.plano) o.tendR = null;
-      else o.tendR = o.plano >= HOJE_ISO ? o.plano : maisDias(o.plano, 5);
+      o.tendP = r['Data Tendência'] || null; // tendência da planilha (calculada só para os obrigatórios)
       return o;
     });
     cache.set(raw, out);
@@ -1204,7 +1198,7 @@ body{background:#eef2f8}
     $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
     // eixo de meses: começa no primeiro mês do Realizado (aprovados, pela ação do CDOC) e termina no fim do Planejado/Tendência; sempre inclui o mês de referência
     const mesesR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
-    const mesesP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendR)]).filter((m) => m != null);
+    const mesesP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendP)]).filter((m) => m != null);
     const ini = Math.min(d3.min(mesesR) ?? d3.min(mesesP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mesesP) ?? ref, d3.max(mesesR) ?? ref, ref));
     { // listas do menu ⋮: de todo o período com dados até o fim do plano
       const tudo = [...mesesR, ...mesesP, ...F.filter((r) => r.tram).map((r) => mIdx(r.cdoc)).filter((m) => m != null), ref];
@@ -1222,7 +1216,7 @@ body{background:#eef2f8}
     const idxs = range(iniU, fimU);
     const series = [
       { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
-      ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendR) }] : []),
+      ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendP) }] : []),
       { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
       { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
     ];
@@ -1374,12 +1368,13 @@ body{background:#eef2f8}
       $('m-semdata').innerHTML = sem ? `Sem data: <b>${fmt(sem)}</b> fora da curva` : '';
       setText('h-mcurva', 'Curva S' + (selC ? ' · segmento ' + selC : ''));
       const mR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
-      const mP = FC.flatMap((r) => [mIdx(r.plano), mIdx(r.tendR)]).filter((m) => m != null);
+      const soOb = base.length === 1 && base[0] === 'ob'; // tendência só com a base Obrigatórios (a planilha só calcula para eles)
+      const mP = FC.flatMap((r) => [mIdx(r.plano), soOb ? mIdx(r.tendP) : null]).filter((m) => m != null);
       const ini = Math.min(d3.min(mR) ?? d3.min(mP) ?? ref, ref), fim = Math.min(2030 * 12 + 11, Math.max(d3.max(mP) ?? ref, d3.max(mR) ?? ref, ref, ini + 1));
       const idxs = range(ini, fim);
       const series = [
         { name: 'Planejado', color: 'var(--ink)', values: cumul(FC, idxs, (r) => r.plano) },
-        ...(showTend ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendR) }] : []),
+        ...(showTend && soOb ? [{ name: 'Tendência', color: C[0], values: cumul(FC, idxs, (r) => r.tendP) }] : []),
         { name: 'Realizado (aprovado)', color: 'var(--good)', w: 3, values: upTo(cumul(FC, idxs, (r) => r.cdoc, (r) => r.real), idxs, ref) },
         { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(FS, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
       ];
