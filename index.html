@@ -465,7 +465,7 @@ body{background:#eef2f8}
       </div>
       <div class="ab-osub" id="o-sub">
         <div class="ab-card" id="card-omes">
-          <h3 id="h-omes">No mês</h3>
+          <h3 id="h-omes">Emissões</h3>
           <p class="ab-note">Pela data de ação do CDOC.</p>
           <div class="ab-scroll flat" id="t-omes" data-source="obrigatorios"></div>
         </div>
@@ -1053,7 +1053,7 @@ body{background:#eef2f8}
     table(box, [
       { k: 'n', label: '', render: (r) => chip(r.n, r.c || C[0]) },
       { k: 'm', label: mLab(ref), num: true, fmt },
-      { k: 't', label: 'Total', num: true, fmt }
+      { k: 't', label: 'Total acumulado', num: true, fmt }
     ], lines.map(([n, m, t, c]) => ({ n, m, t, c })), {});
   }
 
@@ -1227,7 +1227,7 @@ body{background:#eef2f8}
       { name: 'Em trâmite', color: 'var(--orange)', values: upTo(cumul(F, idxs, (r) => r.cdoc, (r) => r.tram), idxs, ref) }
     ];
     legend($('l-ocurva'), series.map((s) => s.name), (k) => series.find((s) => s.name === k).color, () => 'ln');
-    setText('h-omes', 'Emissões em ' + mLab(ref));
+    setText('h-omes', 'Emissões');
     monthCards($('t-omes'), F, ref);
     gauge($('g-oader'), [{ v: n ? real / n : null, target: 0.8, label: 'Aprovados ÷ total de obrigatórios', color: real / n >= 0.8 ? 'var(--good)' : 'var(--bad)', sub: `${fmt(real)} de ${fmt(n)}` }]); // aderência = % aprovado (finalizado) sobre o total
     legend($('l-sdoc4'), SDOC, (k) => SDOC_C[k]);
