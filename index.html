@@ -92,6 +92,7 @@ body{background:#eef2f8}
 .ab-semdata b{font-weight:800}
 .ab-semdata:empty{display:none}
 #t-oemp .ab-table th{white-space:pre-line;vertical-align:bottom}
+#t-omes .ab-table th{white-space:pre-line;vertical-align:bottom}
 #t-oemp .ab-table th .ab-th{line-height:1.35}
 .ab-btn-img{background:var(--blue);border-color:var(--blue);color:#fff}
 .ab-btn-img:hover{background:var(--navy);border-color:var(--navy)}
@@ -1053,7 +1054,7 @@ body{background:#eef2f8}
     table(box, [
       { k: 'n', label: '', render: (r) => chip(r.n, r.c || C[0]) },
       { k: 'm', label: mLab(ref), num: true, fmt },
-      { k: 't', label: 'Total acumulado', num: true, fmt }
+      { k: 't', label: 'Total\nacumulado', num: true, fmt }
     ], lines.map(([n, m, t, c]) => ({ n, m, t, c })), {});
   }
 
