@@ -447,7 +447,7 @@ body{background:#eef2f8}
     </div>
     <div class="ab-ogrid">
       <div class="ab-card" id="card-ocurva">
-        <div class="ab-tools"><h3>Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><span class="ab-per" id="o-per"></span><div class="ab-kebab ab-noexp"><button class="ab-kebab-btn" type="button" id="o-menu-btn" aria-haspopup="true" aria-expanded="false" title="Opções do gráfico">⋮</button><div class="ab-kebab-pop" id="o-menu" hidden>
+        <div class="ab-tools"><h3 id="h-ocurva">Curva S dos obrigatórios</h3><span class="ab-semdata" id="o-semdata" title="Documentos com Status Documento = S/data não entram na curva"></span><span class="ab-per" id="o-per"></span><div class="ab-kebab ab-noexp"><button class="ab-kebab-btn" type="button" id="o-menu-btn" aria-haspopup="true" aria-expanded="false" title="Opções do gráfico">⋮</button><div class="ab-kebab-pop" id="o-menu" hidden>
           <p class="ab-kebab-t">Período do gráfico</p>
           <label>Início<select id="o-ini"></select></label>
           <label>Fim<select id="o-fim"></select></label>
@@ -1195,6 +1195,12 @@ body{background:#eef2f8}
     setText('ab-take', n ? `Documentos obrigatórios: ${fmt(real)} de ${fmt(n)} aprovados (${pct(real / n)}). Aderência: ${pct(real / n)} contra meta de 80%.` : 'Nenhum documento obrigatório com os filtros atuais.');
     const FC = F.filter((r) => r.sdoc !== 'S/data'); // Curva S sem os documentos sem data (Status Documento = S/data)
     const semData = F.length - FC.length;
+    { // título da Curva S com o lote e os pacotes filtrados (ex.: "Curva S dos obrigatórios · LOTE 03 · PACOTES 10, 11")
+      const po = P(), lotes = vals(po.ob_lote), pacs = vals(po.ob_pac);
+      const pacTxt = !pacs.length ? '' : pacs.every((x) => /^PACOTE \S+$/.test(x)) && pacs.length > 1
+        ? 'PACOTES ' + pacs.map((x) => x.slice(7)).sort((x, y) => parseInt(x) - parseInt(y) || x.localeCompare(y)).join(', ') : pacs.join(', ');
+      setText('h-ocurva', ['Curva S dos obrigatórios', [...lotes].sort().join(', '), pacTxt].filter(Boolean).join(' · '));
+    }
     $('o-semdata').innerHTML = semData ? `Sem data: <b>${fmt(semData)}</b> ${semData === 1 ? 'documento fora' : 'documentos fora'} da curva` : '';
     // eixo de meses: começa no primeiro mês do Realizado (aprovados, pela ação do CDOC) e termina no fim do Planejado/Tendência; sempre inclui o mês de referência
     const mesesR = FC.filter((r) => r.real).map((r) => mIdx(r.cdoc)).filter((m) => m != null);
